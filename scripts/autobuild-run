@@ -694,6 +694,10 @@ class Builder:
                 sha1 = hashlib.sha1(f.read()).hexdigest()
             resultfilename = "instance-%d-%s.tar.bz2" % (self.instance, sha1)
             os.rename(os.path.join(self.outputdir, "results.tar.bz2"), resultfilename)
+            summaryfilename = "instance-%d-%s.summary" % (self.instance, sha1)
+            with open(summaryfilename, 'wt') as f:
+                f.write("%d,%s\n" % (result, ','.join(reason or ("", ))))
+
             log_write(self.log, "INFO: results saved as %s" % resultfilename)
 
     def run_instance(self):
