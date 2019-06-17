@@ -727,7 +727,14 @@ def run_instance(**kwargs):
             log_write(kwargs['log'], "WARN: failed to generate configuration")
             continue
 
-        ret = do_build(**kwargs)
+        # Check if the build test is supposed to be a reproducible test
+        outputdir = os.path.abspath(os.path.join(idir, "output"))
+        with open(os.path.join(outputdir, ".config"), "r") as fconf:
+            reproducible = "BR2_REPRODUCIBLE=y\n" in fconf.read()
+        if reproducible:
+            ret = do_reproducible_build(**kwargs)
+        else:
+            ret = do_build(**kwargs)
 
         send_results(ret, **kwargs)
 
