@@ -470,8 +470,6 @@ def send_results(result, **kwargs):
     srcdir = os.path.join(idir, "buildroot")
     resultdir = os.path.join(outputdir, "results")
 
-    os.mkdir(resultdir)
-
     shutil.copyfile(os.path.join(outputdir, ".config"),
                     os.path.join(resultdir, "config"))
     shutil.copyfile(os.path.join(outputdir, "defconfig"),
@@ -646,6 +644,9 @@ def run_instance(**kwargs):
         ret = prepare_build(**kwargs)
         if ret != 0:
             continue
+
+        resultdir = os.path.join(idir, "output", "results")
+        os.mkdir(resultdir)
 
         ret = gen_config(**kwargs)
         if ret != 0:
