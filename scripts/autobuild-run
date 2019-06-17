@@ -204,7 +204,7 @@ def get_branch():
 
 class SystemInfo:
     DEFAULT_NEEDED_PROGS = ["make", "git", "gcc"]
-    DEFAULT_OPTIONAL_PROGS = ["bzr", "java", "javac", "jar"]
+    DEFAULT_OPTIONAL_PROGS = ["bzr", "diffoscope", "java", "javac", "jar"]
 
     def __init__(self):
         self.needed_progs = list(self.__class__.DEFAULT_NEEDED_PROGS)
@@ -393,6 +393,43 @@ def stop_on_build_hang(monitor_thread_hung_build_flag,
                     sub_proc.kill()
                 break
         monitor_thread_stop_flag.wait(30)
+
+def check_reproducibility(**kwargs):
+    """Check reproducibility of builds
+
+    Use diffoscope on the built images, if diffoscope is not
+    installed, fallback to cmp
+    """
+
+    log = kwargs['log']
+    idir = "instance-%d" % kwargs['instance']
+    outputdir = os.path.join(idir, "output")
+    srcdir = os.path.join(idir, "buildroot")
+    reproducible_results = os.path.join(outputdir, "results", "reproducible_results")
+    # Using only tar images for now
+    build_1_image = os.path.join(outputdir, "images-1", "rootfs.tar")
+    build_2_image = os.path.join(outputdir, "images", "rootfs.tar")
+
+    with open(reproducible_results, 'w') as diff:
+        if kwargs['sysinfo'].has("diffoscope"):
+            # Prefix to point diffoscope towards cross-tools
+            prefix = subprocess.check_output(["make", "O=%s" % outputdir, "-C", srcdir, "printvars", "VARS=TARGET_CROSS"])
+            # Remove TARGET_CROSS= and \n from the string
+            prefix = prefix[13:-1]
+            log_write(log, "INFO: running diffoscope on images")
+            subprocess.call(["diffoscope", build_1_image, build_2_image,
+                                "--tool-prefix-binutils", prefix], stdout=diff, stderr=log)
+        else:
+            log_write(log, "INFO: diffoscope not installed, falling back to cmp")
+            subprocess.call(["cmp", "-b", build_1_image, build_2_image], stdout=diff, stderr=log)
+
+    if os.stat(reproducible_results).st_size > 0:
+        log_write(log, "INFO: Build is non-reproducible.")
+        return -1
+
+    # rootfs images match byte-for-byte -> reproducible image
+    log_write(log, "INFO: Build is reproducible!")
+    return 0
 
 def do_build(**kwargs):
     """Run the build itself"""
