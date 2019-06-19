@@ -154,6 +154,17 @@ function import_result($buildid, $filename)
     /* Remove the build.log.bz2 file if it's in there */
     system("rm -f " . $thisbuildtmpdir . "build.log.bz2", $retval);
 
+    /* Compress files that are typically too large and infrequently
+       used */
+    $files_to_compress = array("build-time.log",
+			       "licenses-manifest.csv",
+			       "packages-file-list-host.txt",
+			       "packages-file-list-staging.txt",
+			       "packages-file-list.txt");
+    foreach ($files_to_compress as $f) {
+	system("gzip " . $thisbuildtmpdir . $f, $retval);
+    }
+
     /* Create the 'results/xyz/' directory if it doesn't already
        exists */
     if (! file_exists($finalbuildresultdir)) {
