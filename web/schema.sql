@@ -27,5 +27,10 @@ CREATE TABLE `symbol_per_result` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `result_id` int(11) NOT NULL DEFAULT '0',
   `symbol_id` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_result_id` FOREIGN KEY (`result_id`) REFERENCES `results`(`id`),
+  CONSTRAINT `fk_symbol_id` FOREIGN KEY (`symbol_id`) REFERENCES `config_symbol`(`id`),
+  INDEX `ix_symbol_id`(`symbol_id`),
+  INDEX `ix_result_id`(`result_id`)
+
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
