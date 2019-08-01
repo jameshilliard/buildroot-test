@@ -271,9 +271,10 @@ class SystemInfo:
         return not missing_requirements
 
 class Builder:
-    def __init__(self, instance, njobs):
+    def __init__(self, instance, njobs, sysinfo):
         self.instance = instance
         self.njobs = njobs
+        self.sysinfo = sysinfo
 
     def prepare_build(self, **kwargs):
         """Prepare for the next build of the specified instance
@@ -416,7 +417,7 @@ class Builder:
         build_2_image = os.path.join(outputdir, "images", "rootfs.tar")
 
         with open(reproducible_results, 'w') as diff:
-            if kwargs['sysinfo'].has("diffoscope"):
+            if self.sysinfo.has("diffoscope"):
                 # Prefix to point diffoscope towards cross-tools
                 prefix = subprocess.check_output(["make", "O=%s" % outputdir, "-C", srcdir, "printvars", "VARS=TARGET_CROSS"])
                 # Remove TARGET_CROSS= and \n from the string
@@ -846,9 +847,9 @@ def main():
     for i in range(0, int(args['--ninstances'])):
         builder = Builder(
             instance = i,
-            njobs = args['--njobs'])
+            njobs = args['--njobs'],
+            sysinfo = sysinfo)
         p = multiprocessing.Process(target=builder.run_instance, kwargs=dict(
-                sysinfo = sysinfo,
                 http_url = args['--http-url'],
                 http_login = args['--http-login'],
                 http_password = args['--http-password'],
