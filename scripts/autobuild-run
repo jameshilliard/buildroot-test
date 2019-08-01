@@ -274,7 +274,7 @@ class Builder:
     def __init__(self, instance, njobs, sysinfo,
                  http_url, http_login, http_password,
                  submitter, make_opts, nice, toolchains_csv,
-                 repo, upload):
+                 repo, upload, buildpid):
         self.instance = instance
         self.njobs = njobs
         self.sysinfo = sysinfo
@@ -287,6 +287,7 @@ class Builder:
         self.toolchains_csv = toolchains_csv
         self.repo = repo
         self.upload = upload
+        self.buildpid = buildpid
 
     def prepare_build(self, **kwargs):
         """Prepare for the next build of the specified instance
@@ -482,9 +483,9 @@ class Builder:
         build_monitor.daemon = True
         build_monitor.start()
 
-        kwargs['buildpid'][self.instance] = sub.pid
+        self.buildpid[self.instance] = sub.pid
         ret = sub.wait()
-        kwargs['buildpid'][self.instance] = 0
+        self.buildpid[self.instance] = 0
 
         # If build failed, monitor thread would have exited at this point
         if monitor_thread_hung_build_flag.is_set():
@@ -868,9 +869,9 @@ def main():
             nice = (args['--nice'] or 0),
             toolchains_csv = args['--toolchains-csv'],
             repo = args['--repo'],
-            upload = upload)
+            upload = upload,
+            buildpid = buildpid)
         p = multiprocessing.Process(target=builder.run_instance, kwargs=dict(
-                buildpid = buildpid,
                 debug = args['--debug']
             ))
         p.start()
