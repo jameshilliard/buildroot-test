@@ -729,7 +729,7 @@ class Builder:
             if reproducible:
                 ret = self.do_reproducible_build()
             else:
-                ret = self.do_build()
+                ret = self.do_build(self.outputdir)
 
             self.send_results(ret)
 
