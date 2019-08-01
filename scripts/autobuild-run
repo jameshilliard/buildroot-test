@@ -272,13 +272,15 @@ class SystemInfo:
 
 class Builder:
     def __init__(self, instance, njobs, sysinfo,
-                 http_url, http_login, http_password):
+                 http_url, http_login, http_password,
+                 submitter):
         self.instance = instance
         self.njobs = njobs
         self.sysinfo = sysinfo
         self.http_url = http_url
         self.http_login = http_login
         self.http_password = http_password
+        self.submitter = submitter
 
     def prepare_build(self, **kwargs):
         """Prepare for the next build of the specified instance
@@ -670,7 +672,7 @@ class Builder:
         resultf.close()
 
         with open(os.path.join(resultdir, "submitter"), "w+") as submitterf:
-            submitterf.write(kwargs['submitter'])
+            submitterf.write(self.submitter)
 
         # Yes, shutil.make_archive() would be nice, but it doesn't exist
         # in Python 2.6.
@@ -855,9 +857,9 @@ def main():
             sysinfo = sysinfo,
             http_url = args['--http-url'],
             http_login = args['--http-login'],
-            http_password = args['--http-password'])
+            http_password = args['--http-password'],
+            submitter = args['--submitter'])
         p = multiprocessing.Process(target=builder.run_instance, kwargs=dict(
-                submitter = args['--submitter'],
                 make_opts = (args['--make-opts'] or ''),
                 nice = (args['--nice'] or 0),
                 toolchains_csv = args['--toolchains-csv'],
