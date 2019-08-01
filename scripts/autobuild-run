@@ -273,7 +273,8 @@ class SystemInfo:
 class Builder:
     def __init__(self, instance, njobs, sysinfo,
                  http_url, http_login, http_password,
-                 submitter, make_opts, nice, toolchains_csv):
+                 submitter, make_opts, nice, toolchains_csv,
+                 repo):
         self.instance = instance
         self.njobs = njobs
         self.sysinfo = sysinfo
@@ -284,6 +285,7 @@ class Builder:
         self.make_opts = make_opts
         self.nice = nice
         self.toolchains_csv = toolchains_csv
+        self.repo = repo
 
     def prepare_build(self, **kwargs):
         """Prepare for the next build of the specified instance
@@ -336,7 +338,7 @@ class Builder:
         # didn't exist already.
         srcdir = os.path.join(idir, "buildroot")
         if not os.path.exists(srcdir):
-            ret = subprocess.call(["git", "clone", kwargs['repo'], srcdir],
+            ret = subprocess.call(["git", "clone", self.repo, srcdir],
                                   stdout=log, stderr=log)
             if ret != 0:
                 log_write(log, "ERROR: could not clone Buildroot sources")
@@ -863,9 +865,9 @@ def main():
             submitter = args['--submitter'],
             make_opts = (args['--make-opts'] or ''),
             nice = (args['--nice'] or 0),
-            toolchains_csv = args['--toolchains-csv'])
+            toolchains_csv = args['--toolchains-csv'],
+            repo = args['--repo'])
         p = multiprocessing.Process(target=builder.run_instance, kwargs=dict(
-                repo = args['--repo'],
                 upload = upload,
                 buildpid = buildpid,
                 debug = args['--debug']
