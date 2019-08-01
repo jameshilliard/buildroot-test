@@ -273,7 +273,7 @@ class SystemInfo:
 class Builder:
     def __init__(self, instance, njobs, sysinfo,
                  http_url, http_login, http_password,
-                 submitter, make_opts, nice):
+                 submitter, make_opts, nice, toolchains_csv):
         self.instance = instance
         self.njobs = njobs
         self.sysinfo = sysinfo
@@ -283,6 +283,7 @@ class Builder:
         self.submitter = submitter
         self.make_opts = make_opts
         self.nice = nice
+        self.toolchains_csv = toolchains_csv
 
     def prepare_build(self, **kwargs):
         """Prepare for the next build of the specified instance
@@ -381,7 +382,7 @@ class Builder:
         args = [os.path.join(srcdir, "utils/genrandconfig"),
                 "-o", outputdir, "-b", srcdir]
 
-        toolchains_csv = kwargs['toolchains_csv']
+        toolchains_csv = self.toolchains_csv
         if toolchains_csv:
             if not os.path.isabs(toolchains_csv):
                 toolchains_csv = os.path.join(srcdir, toolchains_csv)
@@ -861,9 +862,9 @@ def main():
             http_password = args['--http-password'],
             submitter = args['--submitter'],
             make_opts = (args['--make-opts'] or ''),
-            nice = (args['--nice'] or 0))
+            nice = (args['--nice'] or 0),
+            toolchains_csv = args['--toolchains-csv'])
         p = multiprocessing.Process(target=builder.run_instance, kwargs=dict(
-                toolchains_csv = args['--toolchains-csv'],
                 repo = args['--repo'],
                 upload = upload,
                 buildpid = buildpid,
