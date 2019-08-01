@@ -271,8 +271,9 @@ class SystemInfo:
         return not missing_requirements
 
 class Builder:
-    def __init__(self, instance):
+    def __init__(self, instance, njobs):
         self.instance = instance
+        self.njobs = njobs
 
     def prepare_build(self, **kwargs):
         """Prepare for the next build of the specified instance
@@ -455,7 +456,7 @@ class Builder:
         cmd = ["nice", "-n", str(nice),
                "make", "O=%s" % outputdir,
                "-C", srcdir, "BR2_DL_DIR=%s" % dldir,
-               "BR2_JLEVEL=%s" % kwargs['njobs']] \
+               "BR2_JLEVEL=%s" % self.njobs] \
             + kwargs['make_opts'].split()
         sub = subprocess.Popen(cmd, stdout=f, stderr=f)
 
@@ -843,9 +844,10 @@ def main():
     buildpid = multiprocessing.Array('i', int(args['--ninstances']))
     processes = []
     for i in range(0, int(args['--ninstances'])):
-        builder = Builder(instance = i)
+        builder = Builder(
+            instance = i,
+            njobs = args['--njobs'])
         p = multiprocessing.Process(target=builder.run_instance, kwargs=dict(
-                njobs = args['--njobs'],
                 sysinfo = sysinfo,
                 http_url = args['--http-url'],
                 http_login = args['--http-login'],
