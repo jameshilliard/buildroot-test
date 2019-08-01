@@ -66,7 +66,7 @@ defaults = {
     '--make-opts': '',
     '--nice': 0,
     '--pid-file': '/tmp/buildroot-autobuild.pid',
-    '--http-url': 'http://autobuild.buildroot.org/submit/',
+    '--http-url': 'http://autobuild.buildroot.org/',
     '--toolchains-csv': 'support/config-fragments/autobuild/toolchain-configs.csv',
     '--repo': 'https://github.com/buildroot/buildroot.git',
 }
@@ -145,6 +145,7 @@ from distutils.version import StrictVersion
 import platform
 from threading import Thread, Event
 import datetime
+import urlparse
 
 if sys.hexversion >= 0x3000000:
     import configparser
@@ -283,7 +284,7 @@ class Builder:
             self.log = open(os.path.join(self.idir, "instance.log"), "a+")
 
     def check_version(self):
-        with urlopen_closing('http://autobuild.buildroot.org/version') as r:
+        with urlopen_closing(urlparse.urljoin(self.http_url, 'version')) as r:
             version = int(decode_bytes(r.readline()).strip())
         if version > VERSION:
             print("ERROR: script version too old, please upgrade.")
@@ -291,14 +292,14 @@ class Builder:
 
     def get_branch(self):
         """Returns the branch that should be built. It fetches a CSV file from
-        autobuild.buildroot.org that provides the list of branches to test
+        the autobuild server that provides the list of branches to test
         (first field) and their weight (second field). We build a list of
         branches, where the branch name is repeated N times, with N being
         the weight of the branch. We then pick a random branch in this
         list. This way, branches with a higher weight are more likely to
         be selected.
         """
-        with urlopen_closing('http://autobuild.buildroot.org/branches') as r:
+        with urlopen_closing(urlparse.urljoin(self.http_url, 'branches')) as r:
             csv_branches = r.readlines()
         branches = []
         for branch in csv.reader(csv_branches):
@@ -678,7 +679,7 @@ class Builder:
                                    "-H", "Expect:",
                                    "-F", "uploadedfile=@%s" % os.path.join(self.outputdir, "results.tar.bz2"),
                                    "-F", "uploadsubmit=1",
-                                   self.http_url],
+                                   urlparse.urljoin(self.http_url, 'submit/')],
                                   stdout=self.log, stderr=self.log)
             if ret != 0:
                 log_write(self.log, "INFO: results could not be submitted, %d" % ret)
