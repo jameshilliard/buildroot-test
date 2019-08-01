@@ -230,17 +230,21 @@ function import_result($buildid, $filename)
     if ($status == 0)
       $reason = "none";
     else {
-	$tmp = Array();
-	exec("tail -3 " . $thisbuildfinaldir . "build-end.log | grep -v '\[_all\]' | grep 'make.*: \*\*\*' | sed 's,.*\[\([^\]*\)\] Error.*,\\1,' | sed 's,.*/build/\([^/]*\)/.*,\\1,'", $tmp);
-	if (trim($tmp[0]))
-	  $reason = $tmp[0];
-	else {
-	  exec("tail -1 " . $thisbuildfinaldir . "build-time.log | grep :start: | cut -d':' -f4", $tmp);
-	  if (trim($tmp[0]))
-	    $reason = trim($tmp[0]);
-	  else
-	    $reason = "unknown";
-	}
+      if (file_exists($thisbuildfinaldir . "reason"))
+        $reason = trim(file_get_contents($thisbuildfinaldir . "reason", "r"));
+      else {
+        $tmp = Array();
+        exec("tail -3 " . $thisbuildfinaldir . "build-end.log | grep -v '\[_all\]' | grep 'make.*: \*\*\*' | sed 's,.*\[\([^\]*\)\] Error.*,\\1,' | sed 's,.*/build/\([^/]*\)/.*,\\1,'", $tmp);
+        if (trim($tmp[0]))
+          $reason = $tmp[0];
+        else {
+          exec("tail -1 " . $thisbuildfinaldir . "build-time.log | grep :start: | cut -d':' -f4", $tmp);
+          if (trim($tmp[0]))
+            $reason = trim($tmp[0]);
+          else
+            $reason = "unknown";
+        }
+      }
     }
 
     /* Compress files that are typically too large and infrequently
