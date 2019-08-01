@@ -598,6 +598,11 @@ class Builder:
             # not found
             return None
 
+        reason = get_failure_reason()
+        if reason:
+            with open(os.path.join(self.resultdir, "reason"), "w+") as reasonf:
+                reasonf.write("-".join(reason))
+
         def extract_end_log(resultfile):
             """Save the last part of the build log, starting from the failed package"""
 
@@ -606,7 +611,6 @@ class Builder:
                                  (os.path.join(self.outputdir, "logfile"), resultfile)],
                                 shell=True)
 
-            reason = get_failure_reason()
             if not reason:
                 extract_last_500_lines()
             else:
@@ -630,7 +634,6 @@ class Builder:
         def copy_config_log_files():
             """Recursively copy any config.log files from the failing package"""
 
-            reason = get_failure_reason()
             if not reason:
                 return
 
