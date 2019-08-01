@@ -361,12 +361,12 @@ class Builder:
 
         # Update the Buildroot sources.
         abssrcdir = os.path.abspath(self.srcdir)
-        ret = subprocess.call(["git", "fetch", "origin"], cwd=abssrcdir, stdout=self.log, stderr=self.log)
+        ret = subprocess.call(["git", "fetch", self.repo, branch], cwd=abssrcdir, stdout=self.log, stderr=self.log)
         if ret != 0:
             log_write(self.log, "ERROR: could not fetch Buildroot sources")
             return -1
 
-        ret = subprocess.call(["git", "checkout", "--detach", "origin/%s" % branch], cwd=abssrcdir, stdout=self.log, stderr=self.log)
+        ret = subprocess.call(["git", "checkout", "FETCH_HEAD"], cwd=abssrcdir, stdout=self.log, stderr=self.log)
         if ret != 0:
             log_write(self.log, "ERROR: could not check out Buildroot sources")
             return -1
