@@ -178,13 +178,6 @@ def log_write(logf, msg):
     logf.write("[%s] %s\n" % (strftime("%a, %d %b %Y %H:%M:%S", localtime()), msg))
     logf.flush()
 
-def check_version():
-    with urlopen_closing('http://autobuild.buildroot.org/version') as r:
-        version = int(decode_bytes(r.readline()).strip())
-    if version > VERSION:
-        print("ERROR: script version too old, please upgrade.")
-        sys.exit(1)
-
 def get_branch():
     """Returns the branch that should be built. It fetches a CSV file from
     autobuild.buildroot.org that provides the list of branches to test
@@ -305,6 +298,13 @@ class Builder:
             self.log = sys.stdout
         else:
             self.log = open(os.path.join(self.idir, "instance.log"), "a+")
+
+    def check_version(self):
+        with urlopen_closing('http://autobuild.buildroot.org/version') as r:
+            version = int(decode_bytes(r.readline()).strip())
+        if version > VERSION:
+            print("ERROR: script version too old, please upgrade.")
+            sys.exit(1)
 
     def prepare_build(self):
         """Prepare for the next build of the specified instance
@@ -706,7 +706,7 @@ class Builder:
         log_write(self.log, "INFO: instance started")
 
         while True:
-            check_version()
+            self.check_version()
 
             ret = self.prepare_build()
             if ret != 0:
@@ -765,7 +765,6 @@ def main():
     # showing error messages in another language.
     os.environ['LC_ALL'] = 'C'
 
-    check_version()
     sysinfo = SystemInfo()
 
     args = docopt.docopt(doc, version=VERSION)
