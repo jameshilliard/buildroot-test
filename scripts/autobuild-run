@@ -278,6 +278,10 @@ class Builder:
         self.outputdir = os.path.abspath(os.path.join(self.idir, "output"))
         self.resultdir = os.path.join(self.outputdir, "results")
 
+        # If it doesn't exist, create the instance directory
+        if not os.path.exists(self.idir):
+            os.mkdir(self.idir)
+
         if self.debug:
             self.log = sys.stdout
         else:
@@ -706,10 +710,6 @@ class Builder:
         Prepare the build, generate a configuration, run the build, and submit the
         results.
         """
-
-        # If it doesn't exist, create the instance directory
-        if not os.path.exists(self.idir):
-            os.mkdir(self.idir)
 
         log_write(self.log, "INFO: instance started")
 
