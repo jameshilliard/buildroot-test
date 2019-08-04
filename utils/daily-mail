@@ -387,6 +387,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dry-run', action='store_true', help='Do not send email, only show output')
     parser.add_argument('--date', action='store', help='Use this date instead of yesterday')
+    parser.add_argument('--branches', action='store', nargs='+', help='List of branches (blank separated)')
     args = parser.parse_args()
     if args.date and not RE_DATE.match(args.date):
         parser.error('date must be in format YYYY-MM-DD')
@@ -400,7 +401,7 @@ def __main__():
     else:
         yesterday = date.today() - timedelta(1)
         date_str = yesterday.strftime('%Y-%m-%d')
-    branches = get_branches()
+    branches = args.branches if args.branches else get_branches()
 
     db = _mysql.connect(host=localconfig.host,
                         user=localconfig.user,
