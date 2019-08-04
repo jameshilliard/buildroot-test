@@ -231,7 +231,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
     for dev, notif in notifications.iteritems():
         to = dev.name
         email_from = localconfig.fromaddr
-        subject = "[{}] Your build results for {}".format(baseurl, datestr)
+        subject = "[{}] Your daily results for {}".format(baseurl, datestr)
         contents = "Hello,\n\n"
         contents += textwrap.fill("This is the list of Buildroot build failures that occurred on {}, "
                                   "and for which you are a registered architecture developer or package "
@@ -304,11 +304,12 @@ def global_email(smtp, results, results_by_reason, datestr, overall, dry_run):
     '''
     to = "buildroot@buildroot.org"
     email_from = localconfig.fromaddr
-    subject = "[{}] Build results for {}".format(baseurl, datestr)
+    subject = "[{}] Daily results for {}".format(baseurl, datestr)
     contents = "Hello,\n\n"
-    contents += "Build statistics for {}\n".format(datestr)
-    contents += "===============================\n\n"
-    contents += "      branch |  OK | NOK | TIM | TOT |\n"
+    if len(overall) != 0:
+        contents += "Autobuild statistics for {}\n".format(datestr)
+        contents += "===============================\n\n"
+        contents += "      branch |  OK | NOK | TIM | TOT |\n"
     for branch in sorted(overall.iterkeys()):
         stats = overall[branch]
         if stats[3] == 0:
@@ -390,6 +391,8 @@ def parse_args():
     parser.add_argument('--branches', action='store', nargs='+', help='List of branches (blank separated)')
     parser.add_argument('--dest', action='store', nargs='+', choices=['dev', 'global'],
                         help='List of emails type to send (ie. global, dev)')
+    parser.add_argument('--data', action='store', nargs='+', choices=['autobuild'],
+                        help='List of information to add in emails (blank separated)')
     args = parser.parse_args()
     if args.date and not RE_DATE.match(args.date):
         parser.error('date must be in format YYYY-MM-DD')
@@ -405,14 +408,20 @@ def __main__():
         date_str = yesterday.strftime('%Y-%m-%d')
     branches = args.branches if args.branches else get_branches()
     email_dest = set(args.dest) if args.dest else {'dev', 'global'}
+    email_data = set(args.data) if args.data else {'autobuild'}
 
     db = _mysql.connect(host=localconfig.host,
                         user=localconfig.user,
                         passwd=localconfig.passwd,
                         db=localconfig.db)
-    overall_stats = get_overall_stats(db, date_str, branches)
-    results = get_build_results(db, date_str, branches)
-    results_by_reason = get_build_results_grouped_by_reason(db, date_str, branches)
+    if 'autobuild' in email_data:
+        overall_stats = get_overall_stats(db, date_str, branches)
+        results = get_build_results(db, date_str, branches)
+        results_by_reason = get_build_results_grouped_by_reason(db, date_str, branches)
+    else:
+        overall_stats = {}
+        results = {}
+        results_by_reason = {}
     notifications = calculate_notifications(results)
     smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
     smtp.starttls()
