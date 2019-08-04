@@ -207,8 +207,8 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
     '''
     Send the e-mails to the individual developers
     '''
-    for k, v in notifications.iteritems():
-        to = k.name
+    for dev, notif in notifications.iteritems():
+        to = dev.name
         email_from = localconfig.fromaddr
         subject = "[%s] Your build results for %s" % (baseurl, datestr)
         contents = "Hello,\n\n"
@@ -218,11 +218,11 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
                                   "investigating those build failures and sending patches to fix them. "
                                   "Thanks!" % datestr)
         contents += "\n\n"
-        show_orphan = k.name == ORPHAN_DEVELOPER
+        show_orphan = dev.name == ORPHAN_DEVELOPER
 
         for branch in branches:
-            archs = v.arch_notifications.get(branch, [])
-            packages = v.package_notifications.get(branch, [])
+            archs = notif.arch_notifications.get(branch, [])
+            packages = notif.package_notifications.get(branch, [])
 
             if len(archs) == 0 and len(packages) == 0:
                 continue
@@ -257,7 +257,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
             msg['From'] = email_from
             msg['Date'] = formatdate()
             smtp.sendmail(email_from, to, msg.as_string())
-            print "To: %s" % k.name
+            print "To: %s" % dev.name
 
 
 def global_email_branch_result(results, results_by_reason, branch):
