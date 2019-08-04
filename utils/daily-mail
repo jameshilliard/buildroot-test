@@ -182,6 +182,23 @@ def shrink_str(string, length, align='right', fill='...'):
 
 def show_results(results, show_status, show_orphan=False):
     contents = ""
+    # Header
+    if show_status:
+        contents += '{:^12} | {:^30} | {:^3} | {:^79}'.format('arch', 'reason', 'OK?', 'url')
+    else:
+        contents += '{:^12} | {:^30} | {:^79}'.format('arch', 'reason', 'url')
+    if show_orphan:
+        contents += ' | {:^5}'.format('orph?')
+
+    if show_status:
+        contents += '\n{0:-^12}-+-{0:-^30}-+-{0:-^3}-+-{0:-^79}-'.format('')
+    else:
+        contents += '\n{0:-^12}-+-{0:-^30}-+-{0:-^79}-'.format('')
+    if show_orphan:
+        contents += '+-{0:-^5}-'.format('')
+    contents += '\n'
+
+    # Actual data
     for r in results:
         arch = r['arch']
         reason = shrink_str(r['reason'], 30)
