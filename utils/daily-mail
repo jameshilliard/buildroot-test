@@ -12,6 +12,7 @@ import localconfig
 import csv
 from collections import defaultdict
 import math
+import argparse
 
 sys.path.append(os.path.join(localconfig.brbase, "utils"))
 import getdeveloperlib  # noqa: E402
@@ -379,7 +380,14 @@ def calculate_notifications(results):
     return notifications
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dry-run', action='store_true', help='Do not send email, only show output')
+    return parser.parse_args()
+
+
 def __main__():
+    args = parse_args()
     yesterday = date.today() - timedelta(1)
     yesterday_str = yesterday.strftime('%Y-%m-%d')
     branches = get_branches()
@@ -392,15 +400,12 @@ def __main__():
     results = get_build_results(db, yesterday_str, branches)
     results_by_reason = get_build_results_grouped_by_reason(db, yesterday_str, branches)
     notifications = calculate_notifications(results)
-    dry_run = False
-    if len(sys.argv) == 2 and sys.argv[1] == "--dry-run":
-        dry_run = True
     smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
     smtp.starttls()
     smtp.login(localconfig.smtpuser, localconfig.smtppass)
-    developers_email(smtp, branches, notifications, yesterday_str, dry_run)
+    developers_email(smtp, branches, notifications, yesterday_str, args.dry_run)
     global_email(smtp, results, results_by_reason, yesterday_str,
-                 overall_stats, dry_run)
+                 overall_stats, args.dry_run)
     smtp.quit()
 
 
