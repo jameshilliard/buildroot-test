@@ -13,9 +13,12 @@ import csv
 from collections import defaultdict
 import math
 import argparse
+import re
 
 sys.path.append(os.path.join(localconfig.brbase, "utils"))
 import getdeveloperlib  # noqa: E402
+
+RE_DATE = re.compile(r'^\d\d\d\d-\d\d-\d\d$')
 
 baseurl = "autobuild.buildroot.net"
 http_baseurl = "http://" + baseurl
@@ -383,28 +386,35 @@ def calculate_notifications(results):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dry-run', action='store_true', help='Do not send email, only show output')
-    return parser.parse_args()
+    parser.add_argument('--date', action='store', help='Use this date instead of yesterday')
+    args = parser.parse_args()
+    if args.date and not RE_DATE.match(args.date):
+        parser.error('date must be in format YYYY-MM-DD')
+    return args
 
 
 def __main__():
     args = parse_args()
-    yesterday = date.today() - timedelta(1)
-    yesterday_str = yesterday.strftime('%Y-%m-%d')
+    if args.date:
+        date_str = args.date
+    else:
+        yesterday = date.today() - timedelta(1)
+        date_str = yesterday.strftime('%Y-%m-%d')
     branches = get_branches()
 
     db = _mysql.connect(host=localconfig.host,
                         user=localconfig.user,
                         passwd=localconfig.passwd,
                         db=localconfig.db)
-    overall_stats = get_overall_stats(db, yesterday_str, branches)
-    results = get_build_results(db, yesterday_str, branches)
-    results_by_reason = get_build_results_grouped_by_reason(db, yesterday_str, branches)
+    overall_stats = get_overall_stats(db, date_str, branches)
+    results = get_build_results(db, date_str, branches)
+    results_by_reason = get_build_results_grouped_by_reason(db, date_str, branches)
     notifications = calculate_notifications(results)
     smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
     smtp.starttls()
     smtp.login(localconfig.smtpuser, localconfig.smtppass)
-    developers_email(smtp, branches, notifications, yesterday_str, args.dry_run)
-    global_email(smtp, results, results_by_reason, yesterday_str,
+    developers_email(smtp, branches, notifications, date_str, args.dry_run)
+    global_email(smtp, results, results_by_reason, date_str,
                  overall_stats, args.dry_run)
     smtp.quit()
 
