@@ -193,9 +193,9 @@ def show_results(results, show_status, show_orphan=False):
         orphan_str = 'ORPH' if r.get('orphan') else ''
         url = http_baseurl + "/results/" + r['identifier']
         if show_status:
-            contents += "%12s | %30s | %3s | %40s" % (arch, reason, status_str, url)
+            contents += "%12s | %30s | %3s | %79s" % (arch, reason, status_str, url)
         else:
-            contents += "%12s | %30s | %40s" % (arch, reason, url)
+            contents += "%12s | %30s | %79s" % (arch, reason, url)
         if show_orphan:
             contents += " | %4s\n" % (orphan_str)
         else:
