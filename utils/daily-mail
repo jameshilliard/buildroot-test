@@ -85,15 +85,6 @@ def get_mklist(basepath):
 mklist = get_mklist(localconfig.brbase)
 
 
-def get_notification_for_dev(notifications, dev):
-    if dev in notifications:
-        return notifications[dev]
-    else:
-        n = Notification()
-        notifications[dev] = n
-        return n
-
-
 def add_arch_notification(branch, notifications, build_result):
     '''
     Add to the notifications{} dict notifications that are related to
@@ -103,7 +94,7 @@ def add_arch_notification(branch, notifications, build_result):
     for dev in developers:
         if arch not in dev.architectures:
             continue
-        n = get_notification_for_dev(notifications, dev)
+        n = notifications.setdefault(dev, Notification())
         n.arch_notifications[branch].append(build_result)
 
 
@@ -153,11 +144,11 @@ def add_package_notification(branch, notifications, build_result):
         if pkg not in dev.packages:
             continue
         orphan = False
-        n = get_notification_for_dev(notifications, dev)
+        n = notifications.setdefault(dev, Notification())
         n.package_notifications[branch].append(build_result)
     if orphan:
         dev = get_orphan_developer()
-        n = get_notification_for_dev(notifications, dev)
+        n = notifications.setdefault(dev, Notification())
         n.package_notifications[branch].append(build_result)
     build_result['orphan'] = orphan
 
