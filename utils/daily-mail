@@ -11,6 +11,7 @@ from datetime import date, timedelta
 import localconfig
 import csv
 from collections import defaultdict
+import math
 
 sys.path.append(os.path.join(localconfig.brbase, "utils"))
 import getdeveloperlib  # noqa: E402
@@ -161,13 +162,38 @@ def add_package_notification(branch, notifications, build_result):
     build_result['orphan'] = orphan
 
 
+def shrink_str(string, length, align='right', fill='...'):
+    '''
+    Returns the `string` shrinked to fit `length` characters and with `fill`
+    added on `align`.
+
+    :Example:
+
+    >>> shrink_str('This is a very long string!', 10)
+    'This is...'
+
+    >>> shrink_str('This is a very long string!', 20, align='center', fill='[...]')
+    'This is[...] string!'
+    '''
+    if len(fill) > length:
+        raise ValueError('`length` cannot be shorter than `fill`')
+    if align == 'right':
+        return string[:length-len(fill)] + fill if len(string) > length else string
+    elif align == 'left':
+        return fill + string[len(string)-length+len(fill):] if len(string) > length else string
+    elif align == 'center':
+        lcut = math.floor((length - len(fill)) / 2)
+        rcut = len(string) - math.ceil((length - len(fill)) / 2)
+        return string[:lcut] + fill + string[rcut:] if len(string) > length else string
+    else:
+        raise ValueError('align must be either `left`, `right` or `center`')
+
+
 def show_results(results, show_status, show_orphan=False):
     contents = ""
     for r in results:
         arch = r['arch']
-        reason = r['reason']
-        if len(reason) > 30:
-            reason = reason[0:27] + "..."
+        reason = shrink_str(r['reason'], 30)
         status = int(r['status'])
         if status == 1:
             status_str = "NOK"
@@ -258,9 +284,7 @@ def global_email_branch_result(results, results_by_reason, branch):
     contents += "Classification of failures by reason\n"
     contents += "------------------------------------\n\n"
     for r in results_by_reason:
-        reason = r['reason']
-        if len(reason) > 30:
-            reason = reason[0:27] + "..."
+        reason = shrink_str(r['reason'], 30)
         count = int(r['reason_count'])
         contents += "%30s | %-2d\n" % (reason, count)
     contents += "\n\n"
