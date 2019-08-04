@@ -190,10 +190,7 @@ def show_results(results, show_status, show_orphan=False):
             status_str = "NOK"
         elif status == 2:
             status_str = "TIM"
-        if 'orphan' in r and r['orphan']:
-            orphan_str = "ORPH"
-        else:
-            orphan_str = ""
+        orphan_str = 'ORPH' if r.get('orphan') else ''
         url = http_baseurl + "/results/" + r['identifier']
         if show_status:
             contents += "%12s | %30s | %3s | %40s" % (arch, reason, status_str, url)
@@ -224,14 +221,8 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         show_orphan = k.name == ORPHAN_DEVELOPER
 
         for branch in branches:
-            if branch in v.arch_notifications:
-                archs = v.arch_notifications[branch]
-            else:
-                archs = []
-            if branch in v.package_notifications:
-                packages = v.package_notifications[branch]
-            else:
-                packages = []
+            archs = v.arch_notifications.get(branch, [])
+            packages = v.package_notifications.get(branch, [])
 
             if len(archs) == 0 and len(packages) == 0:
                 continue
