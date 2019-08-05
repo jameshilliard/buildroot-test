@@ -72,6 +72,7 @@ class Notification:
     def __init__(self):
         self.arch_notifications = defaultdict(list)
         self.package_notifications = defaultdict(list)
+        self.package_version_notification = []
 
 
 def get_mklist(basepath):
@@ -158,6 +159,23 @@ def add_package_notification(branch, notifications, build_result):
         n = notifications.setdefault(dev, Notification())
         n.package_notifications[branch].append(build_result)
     build_result['orphan'] = orphan
+
+
+def add_outdated_pkg_notification(notifications, package):
+    '''
+    Add to the notifications{} dict notifications that are related to
+    package "maintainers".
+    '''
+    orphan = True
+    for dev in developers:
+        if package['name'] in dev.packages:
+            orphan = False
+            notif = notifications.setdefault(dev, Notification())
+            notif.package_version_notification.append(package)
+    if orphan:
+        package['orphan'] = True
+        notif = notifications.setdefault(get_orphan_developer(), Notification())
+        notif.package_version_notification.append(package)
 
 
 def shrink_str(string, length, align='right', fill='...'):
@@ -400,7 +418,7 @@ def get_outdated_pkgs(path):
     return sorted(s, key=lambda pkg: pkg['name'])
 
 
-def calculate_notifications(results):
+def calculate_notifications(results, outdated_pkgs):
     '''
     Prepare the notifications{} dict for the notifications to individual
     developers, based on architecture developers, package developers,
@@ -414,6 +432,10 @@ def calculate_notifications(results):
                 continue
             add_arch_notification(branch, notifications, result)
             add_package_notification(branch, notifications, result)
+
+    for pkg in outdated_pkgs:
+        add_outdated_pkg_notification(notifications, pkg)
+
     return notifications
 
 
@@ -455,7 +477,7 @@ def __main__():
         overall_stats = {}
         results = {}
         results_by_reason = {}
-    notifications = calculate_notifications(results)
+    notifications = calculate_notifications(results, [])
     smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
     smtp.starttls()
     smtp.login(localconfig.smtpuser, localconfig.smtppass)
