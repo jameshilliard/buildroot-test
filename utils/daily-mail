@@ -14,11 +14,14 @@ from collections import defaultdict
 import math
 import argparse
 import re
+import json
+from packaging import version
 
 sys.path.append(os.path.join(localconfig.brbase, "utils"))
 import getdeveloperlib  # noqa: E402
 
 RE_DATE = re.compile(r'^\d\d\d\d-\d\d-\d\d$')
+RE_HASH_40 = re.compile(r'.*[a-fA-F0-9]{40}.*')
 
 baseurl = "autobuild.buildroot.net"
 http_baseurl = "http://" + baseurl
@@ -365,6 +368,36 @@ def get_build_results_grouped_by_reason(db, datestr, branches):
         r = db.use_result()
         results_by_reason[branch] = r.fetch_row(how=1, maxrows=0)
     return results_by_reason
+
+
+def get_outdated_pkgs(path):
+    with open(path, 'r') as f:
+        stats = json.load(f)
+    s = []
+    for name, pkg in stats['packages'].items():
+        status, latest_ver, p_id = pkg['latest_version']
+        cur_ver = pkg['current_version']
+        # if not upstream version was found, skip
+        if status not in (2, 3):
+            continue
+        # if there's no current or no latest version to compare, skip
+        if not cur_ver or not latest_ver:
+            continue
+        # if the current version is a Git hash, skip as
+        # release-monitoring.org only knows about "regular" releases
+        if RE_HASH_40.match(cur_ver):
+            continue
+        # if the current version in Buildroot is newer or equal to the
+        # latest reported by release-monitoring, skip
+        if version.parse(str(cur_ver)) >= version.parse(str(latest_ver)):
+            continue
+
+        s.append({'name': str(name),
+                  'id': p_id,
+                  'version': str(cur_ver),
+                  'upstream': str(latest_ver),
+                  'from': 'DISTRO' if status == 2 else 'GUESS'})
+    return sorted(s, key=lambda pkg: pkg['name'])
 
 
 def calculate_notifications(results):
