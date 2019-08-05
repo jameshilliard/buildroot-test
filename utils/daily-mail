@@ -358,7 +358,7 @@ def global_email_branch_result(results, results_by_reason, branch):
     return contents
 
 
-def global_email(smtp, results, results_by_reason, datestr, overall, outdated_pkg, dry_run):
+def global_email(smtp, results, results_by_reason, datestr, overall, outdated_pkgs, dry_run):
     '''
     Send the global e-mail to the mailing list
     '''
@@ -380,11 +380,11 @@ def global_email(smtp, results, results_by_reason, datestr, overall, outdated_pk
         if len(results[branch]) == 0:
             continue
         contents += global_email_branch_result(results[branch], results_by_reason[branch], branch)
-    if outdated_pkg:
+    if outdated_pkgs:
         contents += '\n\n'
         contents += "Packages having a newer version\n"
         contents += "===============================\n\n"
-        contents += show_outdated(outdated_pkg, show_orphan=True)
+        contents += show_outdated(outdated_pkgs, show_orphan=True)
     contents += "\n"
     contents += "-- \n"
     contents += http_baseurl
@@ -490,7 +490,7 @@ def parse_args():
     parser.add_argument('--branches', action='store', nargs='+', help='List of branches (blank separated)')
     parser.add_argument('--dest', action='store', nargs='+', choices=['dev', 'global'],
                         help='List of emails type to send (ie. global, dev)')
-    parser.add_argument('--data', action='store', nargs='+', choices=['autobuild'],
+    parser.add_argument('--data', action='store', nargs='+', choices=['autobuild', 'outdated'],
                         help='List of information to add in emails (blank separated)')
     args = parser.parse_args()
     if args.date and not RE_DATE.match(args.date):
@@ -507,7 +507,7 @@ def __main__():
         date_str = yesterday.strftime('%Y-%m-%d')
     branches = args.branches if args.branches else get_branches()
     email_dest = set(args.dest) if args.dest else {'dev', 'global'}
-    email_data = set(args.data) if args.data else {'autobuild'}
+    email_data = set(args.data) if args.data else {'autobuild', 'outdated'}
 
     db = _mysql.connect(host=localconfig.host,
                         user=localconfig.user,
@@ -521,7 +521,8 @@ def __main__():
         overall_stats = {}
         results = {}
         results_by_reason = {}
-    notifications = calculate_notifications(results, [])
+    outdated_pkgs = get_outdated_pkgs(localconfig.pkg_stats) if 'outdated' in email_data else []
+    notifications = calculate_notifications(results, outdated_pkgs)
     smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
     smtp.starttls()
     smtp.login(localconfig.smtpuser, localconfig.smtppass)
@@ -529,7 +530,7 @@ def __main__():
         developers_email(smtp, branches, notifications, date_str, args.dry_run)
     if 'global' in email_dest:
         global_email(smtp, results, results_by_reason, date_str,
-                     overall_stats, [], args.dry_run)
+                     overall_stats, outdated_pkgs, args.dry_run)
     smtp.quit()
 
 
