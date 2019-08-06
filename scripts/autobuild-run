@@ -440,7 +440,8 @@ class Builder:
         with open(reproducible_results, 'w') as diff:
             if self.sysinfo.has("diffoscope"):
                 # Prefix to point diffoscope towards cross-tools
-                prefix = subprocess.check_output(["make", "O=%s" % self.outputdir, "-C", self.srcdir, "printvars", "VARS=TARGET_CROSS"])
+                prefix = subprocess.check_output(["make", "--no-print-directory", "O=%s" % self.outputdir,
+                                                  "-C", self.srcdir, "printvars", "VARS=TARGET_CROSS"])
                 # Remove TARGET_CROSS= and \n from the string
                 prefix = prefix[13:-1]
                 log_write(self.log, "INFO: running diffoscope on images")
