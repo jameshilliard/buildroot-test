@@ -383,6 +383,10 @@ class Builder:
             # shutil.rmtree doesn't remove write-protected files
             subprocess.call(["rm", "-rf", self.outputdir])
         os.mkdir(self.outputdir)
+
+        # If it exists, remove the other output directory used for reproducibility testing
+        if os.path.exists(self.outputdir_2):
+            subprocess.call(["rm", "-rf", self.outputdir_2])
         with open(os.path.join(self.outputdir, "branch"), "w") as branchf:
             branchf.write(branch)
 
