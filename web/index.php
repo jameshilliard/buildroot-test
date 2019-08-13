@@ -62,6 +62,9 @@ if (isset ($_GET['submitter']))
 if (isset($_GET['date']))
   $filters["date"] = $_GET['date'];
 
+if (isset($_GET['symbols']) && is_array($_GET['symbols']))
+  $filters['symbols'] = $_GET['symbols'];
+
 bab_header("Buildroot tests");
 
 echo "<table>\n";
