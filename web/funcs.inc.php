@@ -30,6 +30,24 @@ function bab_footer()
   echo "</html>\n";
 }
 
+function bab_format_sql_config_symbol_filter($db, $symbols)
+{
+  $get_res_id = "select result_id id from symbol_per_result where symbol_id = (select id from config_symbol where name=%s and value=%s)";
+
+  $r = array_map(
+    function($name, $value) use ($db, $get_res_id) {
+      return sprintf($get_res_id, $db->quote_smart($name), $db->quote_smart($value));
+    },
+    array_keys($symbols),
+    $symbols
+  );
+
+  if ($db->has_feature('intersect'))
+    return implode(" intersect ", $r);
+  else
+    return implode(" and result_id in (", $r) . str_repeat(")", count($symbols)-1);
+}
+
 function bab_format_sql_filter($db, $filters)
 {
   $status_map = array(
@@ -37,6 +55,10 @@ function bab_format_sql_filter($db, $filters)
     "NOK" => 1,
     "TIMEOUT" => 2,
   );
+
+  # Move the symbols away from filters since implode wouldn't work with an empty key
+  $symbols = $filters['symbols'];
+  unset($filters['symbols']);
 
   $sql_filters = implode(' and ', array_map(
     function ($v, $k) use ($db, $status_map) {
@@ -61,10 +83,16 @@ function bab_format_sql_filter($db, $filters)
     array_keys($filters)
   ));
 
-  if (count($filters))
-    return "where " . $sql_filters;
-  else
-    return "";
+  $sql = "";
+  if ($symbols) {
+    $symbols_condition = bab_format_sql_config_symbol_filter($db, $symbols);
+    $sql .= " inner join ($symbols_condition) symbols using (id)";
+
+  }
+  if (count($filters) != 0)
+    $sql .= " where $sql_filters";
+
+  return $sql;
 }
 
 /*
@@ -74,7 +102,7 @@ function bab_total_results_count($filters)
 {
   $db = new db();
   $condition = bab_format_sql_filter($db, $filters);
-  $sql = "select count(*) from results $condition;";
+  $sql = "select count(*) from results$condition;";
   $ret = $db->query($sql);
   if ($ret == FALSE) {
     echo "Something's wrong in here\n";
@@ -96,7 +124,7 @@ function bab_get_results($start=0, $count=100, $filters = array())
   $db = new db();
 
   $condition = bab_format_sql_filter($db, $filters);
-  $sql = "select * from results $condition order by builddate desc limit $start, $count;";
+  $sql = "select * from results$condition order by builddate desc limit $start, $count;";
   $ret = $db->query($sql);
   if ($ret == FALSE) {
     echo "Something's wrong with the SQL query\n";
