@@ -454,9 +454,9 @@ class Builder:
                 prefix = prefix[13:-1]
                 log_write(self.log, "INFO: running diffoscope on images")
                 subprocess.call(["diffoscope", build_1_image, build_2_image,
-                                 "--tool-prefix-binutils", prefix, "--json", "-",
-                                 "--text", reproducible_results_text, "--max-text-report-size", "40000"],
-                                stdout=diff, stderr=self.log)
+                                 "--tool-prefix-binutils", prefix, "--json", reproducible_results,
+                                 "--text", reproducible_results_txt, "--max-text-report-size", "40000"],
+                                stderr=self.log)
             else:
                 log_write(self.log, "INFO: diffoscope not installed, falling back to cmp")
                 subprocess.call(["cmp", "-b", build_1_image, build_2_image], stdout=diff, stderr=self.log)
