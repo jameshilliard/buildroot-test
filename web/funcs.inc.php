@@ -44,6 +44,16 @@ function bab_format_sql_filter($db, $filters)
         return sprintf("%s like %s", $k, $db->quote_smart($v));
       else if ($k == "status")
         return sprintf("%s=%s", $k, $db->quote_smart($status_map[$v]));
+      elseif ($k == "date")
+        if (is_array($v)) {
+          if (isset($v['from'], $v['to']))
+            return sprintf("builddate between %s and %s", $db->quote_smart($v['from']), $db->quote_smart($v['to']));
+          else if (isset($v['to']))
+            return sprintf("builddate<=%s", $db->quote_smart($v['to']));
+          else
+            return sprintf("builddate>=%s", $db->quote_smart($v['from']));
+        } else // Assuming the date is a lower-bound
+          return sprintf("builddate>=%s", $db->quote_smart($v));
       else
         return sprintf("%s=%s", $k, $db->quote_smart($v));
     },
