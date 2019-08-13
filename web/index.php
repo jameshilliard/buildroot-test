@@ -59,6 +59,9 @@ if (isset($_GET['subarch']) && preg_match("/^[A-Za-z0-9_\+\.\-]*$/", $_GET['suba
 if (isset ($_GET['submitter']))
   $filters["submitter"] = urldecode($_GET['submitter']);
 
+if (isset($_GET['date']))
+  $filters["date"] = $_GET['date'];
+
 bab_header("Buildroot tests");
 
 echo "<table>\n";
