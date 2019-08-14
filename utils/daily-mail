@@ -375,13 +375,15 @@ def global_email(smtp, results, results_by_reason, datestr, overall, outdated_pk
         if stats[3] == 0:
             continue
         contents += "  {:^10} | {:^3} | {:^3} | {:^3} | {:^3} |\n".format(branch, stats[0], stats[1], stats[2], stats[3])
-    contents += "\n"
+    if len(overall) != 0:
+        contents += "\n"
     for branch in results.keys():
         if len(results[branch]) == 0:
             continue
         contents += global_email_branch_result(results[branch], results_by_reason[branch], branch)
+    if len(overall) != 0:
+        contents += "\n"
     if outdated_pkgs:
-        contents += '\n\n'
         contents += "Packages having a newer version\n"
         contents += "===============================\n\n"
         contents += show_outdated(outdated_pkgs, show_orphan=True)
