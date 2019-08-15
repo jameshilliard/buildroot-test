@@ -282,12 +282,14 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         email_from = localconfig.fromaddr
         subject = "[{}] Your daily results for {}".format(baseurl, datestr)
         contents = "Hello,\n\n"
-        contents += textwrap.fill("This is the list of Buildroot build failures that occurred on {}, "
-                                  "and for which you are a registered architecture developer or package "
-                                  "developer. Please help us improving the quality of Buildroot by "
-                                  "investigating those build failures and sending patches to fix them. "
-                                  "Thanks!".format(datestr))
-        contents += "\n\n"
+
+        if notif.arch_notifications or notif.package_notifications:
+            contents += textwrap.fill("This is the list of Buildroot build failures that occurred on {}, "
+                                      "and for which you are a registered architecture developer or package "
+                                      "developer. Please help us improving the quality of Buildroot by "
+                                      "investigating those build failures and sending patches to fix them. "
+                                      "Thanks!".format(datestr))
+            contents += "\n\n"
         show_orphan = dev.name == ORPHAN_DEVELOPER
 
         for branch in branches:
@@ -312,7 +314,6 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
 
         outdated = notif.package_version_notification
         if len(outdated) != 0:
-            contents += '\n'
             contents += textwrap.fill("This is the list of packages for which a new version has been "
                                       "detected and for which you are a registered developer. Please "
                                       "help us improving the quality of Buildroot by bumping these "
