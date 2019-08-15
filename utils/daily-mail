@@ -284,6 +284,8 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         contents = "Hello,\n\n"
 
         if notif.arch_notifications or notif.package_notifications:
+            contents += "Autobuilder failures\n"
+            contents += "====================\n\n"
             contents += textwrap.fill("This is the list of Buildroot build failures that occurred on {}, "
                                       "and for which you are a registered architecture developer or package "
                                       "developer. Please help us improving the quality of Buildroot by "
@@ -300,7 +302,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
                 continue
 
             contents += "Results for the '{}' branch\n".format(branch)
-            contents += "=========================" + "=" * len(branch) + "\n\n"
+            contents += "-------------------------" + "-" * len(branch) + "\n\n"
 
             if len(archs) != 0:
                 contents += "Build failures related to your architectures:\n\n"
@@ -314,6 +316,8 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
 
         outdated = notif.package_version_notification
         if len(outdated) != 0:
+            contents += "Outdated packages\n"
+            contents += "=================\n\n"
             contents += textwrap.fill("This is the list of packages for which a new version has been "
                                       "detected and for which you are a registered developer. Please "
                                       "help us improving the quality of Buildroot by bumping these "
