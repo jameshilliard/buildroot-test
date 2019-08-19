@@ -37,3 +37,67 @@ table tr.nok td {
 table tr.timeout td {
     background-color: #ffe79e;
 }
+
+
+
+/*****************/
+/*  request.php  */
+/*****************/
+
+form {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	grid-column-gap: 4%;
+	margin: 20px auto;
+	width: 80%;
+}
+
+form input,
+form fieldset,
+form textarea {
+	border: 1px solid #00ccff;
+	box-shadow: 1px 1px 4px #cacada;
+	border-radius: 3px;
+	box-sizing: border-box;
+	margin: 0 auto 10px auto;
+}
+
+form input:focus,
+form fieldset:focus,
+form textarea:focus {
+	outline: none;
+	border: 1px solid #0088ff;
+}
+
+form input:not([type=radio]):not([type=button]):not([type=submit]) {
+	width: 100%;
+}
+
+form textarea {
+	min-width: 100%;
+	max-width: 100%;
+	height: 150px;
+}
+
+form fieldset {
+	margin-top: 10px;
+}
+
+form fieldset label {
+	margin-right: 5%;
+}
+
+form input[type=submit],
+form input[type=button] {
+	width: 90%;
+	margin: 10px auto;
+	padding: 8px 15px 8px 15px;
+	background: #00aaff;
+	color: #fff;
+	grid-column: 2;
+}
+
+form input[type=submit]:hover,
+form input[type=button]:hover {
+	background: #0088ff;
+}
