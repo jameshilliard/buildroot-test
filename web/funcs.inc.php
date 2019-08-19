@@ -24,6 +24,7 @@ function bab_footer()
   echo "<a href=\"stats.php\">build stats</a>&nbsp;-&nbsp;";
   echo "<a href=\"stats/\">package stats</a>&nbsp;-&nbsp;";
   echo "<a href=\"toolchains/\">toolchain configs</a>&nbsp;-&nbsp;";
+  echo "<a href=\"search.php\">advanced search</a>&nbsp;-&nbsp;";
   echo "<a href=\"http://git.buildroot.net/buildroot-test/plain/utils/br-reproduce-build\">Script to reproduce a build</a>\n";
   echo "</p>\n";
   echo "</body>\n";
