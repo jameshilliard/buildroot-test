@@ -76,7 +76,27 @@ if [ $? -ne 0 ] ; then
     exit 1
 fi
 
-mkdir ../output
-cp "${BUILD_DIR}/config" ../output/.config
-make olddefconfig O=../output/
-make 2>&1 O=../output | tee logfile
+# Handle cases of testing reproducibility failures.
+# Run the build in different output directories if BR2_REPRODUCIBLE=y
+# and run diffoscope on the generated images. Output of diffoscope is
+# saved in the "output-1" directory.
+# NOTE: You should have diffoscope installed in order to test
+# reproducibility failures.
+if grep -Fxq "BR2_REPRODUCIBLE=y" "${BUILD_DIR}/config"; then
+    mkdir ../output-1 ../output-2
+    cp "${BUILD_DIR}/config" ../output-1/.config
+    cp "${BUILD_DIR}/config" ../output-2/.config
+    make olddefconfig O=../output-1
+    make olddefconfig O=../output-2
+    make 2>&1 O=../output-1 | tee logfile-1 && make 2>&1 O=../output-2 | tee logfile-2
+    if test $? -ne 0 ; then exit 1 ; fi
+    PREFIX=$(make --no-print-directory O=../output-1 printvars VARS=TARGET_CROSS | cut -c 14- | head -c -1)
+    IMAGE_1="../output-1/images/rootfs.tar"
+    IMAGE_2="../output-2/images/rootfs.tar"
+    diffoscope ${IMAGE_1} ${IMAGE_2} --tool-prefix-binutils ${PREFIX} --text ../output-1/diffoscope_results.txt
+else
+    mkdir ../output
+    cp "${BUILD_DIR}/config" ../output/.config
+    make olddefconfig O=../output/
+    make 2>&1 O=../output | tee logfile
+fi
