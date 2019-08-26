@@ -1,4 +1,4 @@
-function submitForm() {
+function submitForm(event) {
     // Do not send the form
     event.preventDefault();
 

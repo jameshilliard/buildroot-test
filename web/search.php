@@ -7,7 +7,7 @@ bab_header("Buildroot tests - Search page");
 <script type='text/javascript' src="search.js"></script>
 
 
-<form action="index.php" method="get" onsubmit="submitForm()">
+<form action="index.php" method="get" onsubmit="submitForm(event)">
     <label>
         <span>Submitter:</span>
         <input type="text" name="submitter" placeholder="Submitter">
