@@ -528,8 +528,12 @@ def get_pipeline_jobs(project_id, pipeline, kinds=None, **request_kwargs):
         # Remove the unnecessary 'pipeline' field
         del job['pipeline']
         # Backup the actual name and set the job's kind and name depending on the naming scheme
-        job['full_name'] = job['name']
-        job['kind'] = 'other'
+        name = job['full_name'] = job['name']
+        if name.endswith('_defconfig'):
+            job['kind'] = 'defconfig'
+            job['name'] = name[:-10]
+        else:
+            job['kind'] = 'other'
     # Filter failed jobs then sort them
     jobs = (job for job in jobs if job['status'] == 'failed')
     if kinds:
