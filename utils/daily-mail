@@ -532,6 +532,9 @@ def get_pipeline_jobs(project_id, pipeline, kinds=None, **request_kwargs):
         if name.endswith('_defconfig'):
             job['kind'] = 'defconfig'
             job['name'] = name[:-10]
+        elif name.startswith('tests.'):
+            job['kind'] = 'runtime-test'
+            job['name'] = name.split('.')[-1]
         else:
             job['kind'] = 'other'
     # Filter failed jobs then sort them
