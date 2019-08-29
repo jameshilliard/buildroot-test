@@ -78,6 +78,7 @@ class Notification:
         self.arch_notifications = defaultdict(list)
         self.package_notifications = defaultdict(list)
         self.defconfig_notifications = defaultdict(list)
+        self.runtime_test_notifications = defaultdict(list)
         self.package_version_notification = []
 
 
@@ -182,6 +183,23 @@ def add_defconfig_notification(branch, notifications, job):
         job['orphan'] = True
         notif = notifications.setdefault(get_orphan_developer(), Notification())
         notif.defconfig_notifications[branch].append(job)
+
+
+def add_runtime_test_notification(branch, notifications, job):
+    '''
+    Add to the notifications{} dict notifications that are related to
+    runtime-tests "maintainers".
+    '''
+    orphan = True
+    for dev in developers:
+        if job['full_name'] in dev.runtime_tests:
+            orphan = False
+            notif = notifications.setdefault(dev, Notification())
+            notif.runtime_test_notifications[branch].append(job)
+    if orphan:
+        job['orphan'] = True
+        notif = notifications.setdefault(get_orphan_developer(), Notification())
+        notif.runtime_test_notifications[branch].append(job)
 
 
 def add_outdated_pkg_notification(notifications, package):
@@ -674,6 +692,8 @@ def calculate_notifications(results, outdated_pkgs, gitlab_results):
             for job in pipeline['jobs']:
                 if job['kind'] == 'defconfig':
                     add_defconfig_notification(branch, notifications, job)
+                elif job['kind'] == 'runtime-test':
+                    add_runtime_test_notification(branch, notifications, job)
 
     return notifications
 
