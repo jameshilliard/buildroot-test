@@ -77,6 +77,7 @@ class Notification:
     def __init__(self):
         self.arch_notifications = defaultdict(list)
         self.package_notifications = defaultdict(list)
+        self.defconfig_notifications = defaultdict(list)
         self.package_version_notification = []
 
 
@@ -164,6 +165,23 @@ def add_package_notification(branch, notifications, build_result):
         n = notifications.setdefault(dev, Notification())
         n.package_notifications[branch].append(build_result)
     build_result['orphan'] = orphan
+
+
+def add_defconfig_notification(branch, notifications, job):
+    '''
+    Add to the notifications{} dict notifications that are related to
+    defconfig "maintainers".
+    '''
+    orphan = True
+    for dev in developers:
+        if job['name'] in dev.defconfigs:
+            orphan = False
+            notif = notifications.setdefault(dev, Notification())
+            notif.defconfig_notifications[branch].append(job)
+    if orphan:
+        job['orphan'] = True
+        notif = notifications.setdefault(get_orphan_developer(), Notification())
+        notif.defconfig_notifications[branch].append(job)
 
 
 def add_outdated_pkg_notification(notifications, package):
@@ -633,7 +651,7 @@ def get_gitlab_ci(branches, date, ndays=None, kinds=None):
     return pipelines
 
 
-def calculate_notifications(results, outdated_pkgs):
+def calculate_notifications(results, outdated_pkgs, gitlab_results):
     '''
     Prepare the notifications{} dict for the notifications to individual
     developers, based on architecture developers, package developers,
@@ -650,6 +668,12 @@ def calculate_notifications(results, outdated_pkgs):
 
     for pkg in outdated_pkgs:
         add_outdated_pkg_notification(notifications, pkg)
+
+    for branch, pipelines in gitlab_results.iteritems():
+        for pipeline in pipelines:
+            for job in pipeline['jobs']:
+                if job['kind'] == 'defconfig':
+                    add_defconfig_notification(branch, notifications, job)
 
     return notifications
 
@@ -693,7 +717,7 @@ def __main__():
         results = {}
         results_by_reason = {}
     outdated_pkgs = get_outdated_pkgs(localconfig.pkg_stats) if 'outdated' in email_data else []
-    notifications = calculate_notifications(results, outdated_pkgs)
+    notifications = calculate_notifications(results, outdated_pkgs, {})
     smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
     smtp.starttls()
     smtp.login(localconfig.smtpuser, localconfig.smtppass)
