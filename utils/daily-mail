@@ -804,7 +804,11 @@ def __main__():
         results = {}
         results_by_reason = {}
     outdated_pkgs = get_outdated_pkgs(localconfig.pkg_stats) if 'outdated' in email_data else []
-    notifications = calculate_notifications(results, outdated_pkgs, {})
+    if email_data & {'defconfig', 'runtime-test'}:
+        gitlab_ci = get_gitlab_ci(branches, date_struct, kinds=email_data)
+    else:
+        gitlab_ci = {}
+    notifications = calculate_notifications(results, outdated_pkgs, gitlab_ci)
     smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
     smtp.starttls()
     smtp.login(localconfig.smtpuser, localconfig.smtppass)
@@ -812,7 +816,7 @@ def __main__():
         developers_email(smtp, branches, notifications, date_str, args.dry_run)
     if 'global' in email_dest:
         global_email(smtp, branches, results, results_by_reason, date_str,
-                     overall_stats, outdated_pkgs, {}, args.dry_run)
+                     overall_stats, outdated_pkgs, gitlab_ci, args.dry_run)
     smtp.quit()
 
 
