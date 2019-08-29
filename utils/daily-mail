@@ -771,7 +771,8 @@ def parse_args():
     parser.add_argument('--branches', action='store', nargs='+', help='List of branches (blank separated)')
     parser.add_argument('--dest', action='store', nargs='+', choices=['dev', 'global'],
                         help='List of emails type to send (ie. global, dev)')
-    parser.add_argument('--data', action='store', nargs='+', choices=['autobuild', 'outdated'],
+    parser.add_argument('--data', action='store', nargs='+',
+                        choices=['autobuild', 'outdated', 'defconfig', 'runtime-test'],
                         help='List of information to add in emails (blank separated)')
     args = parser.parse_args()
     if args.date and not RE_DATE.match(args.date):
@@ -782,13 +783,13 @@ def parse_args():
 def __main__():
     args = parse_args()
     if args.date:
-        date_str = args.date
+        date_struct = datetime.strptime(args.date, '%Y-%m-%d').date()
     else:
-        yesterday = date.today() - timedelta(1)
-        date_str = yesterday.strftime('%Y-%m-%d')
-    branches = args.branches if args.branches else get_branches()
+        date_struct = date.today() - timedelta(1)
+    date_str = date_struct.isoformat()
+    branches = args.branches or get_branches()
     email_dest = set(args.dest) if args.dest else {'dev', 'global'}
-    email_data = set(args.data) if args.data else {'autobuild', 'outdated'}
+    email_data = set(args.data) if args.data else {'autobuild', 'outdated', 'defconfig', 'runtime-test'}
 
     db = _mysql.connect(host=localconfig.host,
                         user=localconfig.user,
