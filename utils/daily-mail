@@ -246,6 +246,31 @@ def shrink_str(string, length, align='right', fill='...'):
         raise ValueError('align must be either `left`, `right` or `center`')
 
 
+def show_gitlab_ci_jobs(jobs, job_column_description, job_column_length, show_orphan=False):
+    # Header
+    contents = ''
+    if show_orphan:
+        contents += '{:>{}} | {:^61} | {:^5}\n'.format(job_column_description, job_column_length,
+                                                               'link to the job', 'orph?')
+        contents += '{0:->{1}}-+-{0:-^61}-+-{0:-^5}\n'.format('', job_column_length)
+    else:
+        contents += '{:>{}} | {:^61}\n'.format(job_column_description, job_column_length,
+                                                       'link to the job')
+        contents += '{0:->{1}}-+-{0:-^61}\n'.format('', job_column_length)
+
+    # Data
+    for job in sorted(jobs, key=lambda j: (j['kind'], j['name'])):
+        name = shrink_str(job['name'], job_column_length, align='left')
+        orphan = 'ORPH' if job.get('orphan') else ''
+
+        contents += '{:>{}} | {:^61}'.format(name, job_column_length, job['web_url'])
+        if show_orphan:
+            contents += ' | {:^5}'.format(orphan)
+        contents += '\n'
+
+    return contents
+
+
 def show_results(results, show_status, show_orphan=False):
     contents = ""
     # Header
