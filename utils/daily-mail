@@ -425,8 +425,10 @@ def global_email_branch_result(results, results_by_reason):
     contents += show_results(results, show_status=True, show_orphan=True)
     return contents
 
+def global_email_branch_gitlab_result(gitlab_results):
+    pass
 
-def global_email(smtp, branches, results, results_by_reason, datestr, overall, outdated_pkgs, dry_run):
+def global_email(smtp, branches, results, results_by_reason, datestr, overall, outdated_pkgs, gitlab_results, dry_run):
     '''
     Send the global e-mail to the mailing list
     '''
@@ -443,16 +445,20 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
         if stats[3] == 0:
             continue
         contents += "  {:^10} | {:^3} | {:^3} | {:^3} | {:^3} |\n".format(branch, stats[0], stats[1], stats[2], stats[3])
-    if any(map(len, (overall, ))):
+    if any(map(len, (overall, gitlab_results))):
         contents += "\n"
     for branch in branches:
         branch_results = results.get(branch, [])
-        if not any(map(len, (branch_results, ))):
+        branch_gitlab_results = gitlab_results.get(branch, [])
+        if not any(map(len, (branch_results, branch_gitlab_results))):
             continue
         contents += "Results for branch '{}'\n".format(branch)
         contents += "=====================" + "=" * len(branch) + "\n\n"
         if len(branch_results) != 0:
             contents += global_email_branch_result(branch_results, results_by_reason[branch])
+            contents += "\n\n"
+        if len(branch_gitlab_results) != 0:
+            contents += global_email_branch_gitlab_result(branch_gitlab_results)
             contents += "\n\n"
     if outdated_pkgs:
         contents += "Packages having a newer version\n"
@@ -770,7 +776,7 @@ def __main__():
         developers_email(smtp, branches, notifications, date_str, args.dry_run)
     if 'global' in email_dest:
         global_email(smtp, branches, results, results_by_reason, date_str,
-                     overall_stats, outdated_pkgs, args.dry_run)
+                     overall_stats, outdated_pkgs, {}, args.dry_run)
     smtp.quit()
 
 
