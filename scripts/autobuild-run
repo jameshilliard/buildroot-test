@@ -270,7 +270,7 @@ class Builder:
         # frequently needed directories
         self.idir = "instance-%d" % self.instance
         self.srcdir = os.path.join(self.idir, "buildroot")
-        self.dldir = os.path.join(self.idir, "dl")
+        self.dldir = os.path.abspath(os.path.join(self.idir, "dl"))
         # We need the absolute path to use with O=, because the relative
         # path to the output directory here is not relative to the
         # Buildroot sources, but to the location of the autobuilder
