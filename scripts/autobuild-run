@@ -266,6 +266,7 @@ class Builder:
         self.upload = upload
         self.buildpid = buildpid
         self.debug = debug
+        self.build_parallel = False
 
         # frequently needed directories
         self.idir = "instance-%d" % self.instance
@@ -480,6 +481,13 @@ class Builder:
                "-C", self.srcdir, "BR2_DL_DIR=%s" % self.dldir,
                "BR2_JLEVEL=%s" % self.njobs] \
             + self.make_opts.split()
+
+        # when building in parallel, we use both -jX and BR2_JLEVEL=X,
+        # trusting the make job server to properly throttle the total
+        # number of processes.
+        if self.build_parallel:
+            cmd.append("-j%s" % self.njobs)
+
         sub = subprocess.Popen(cmd, stdout=f, stderr=f)
 
         # Setup hung build monitoring thread
@@ -741,7 +749,12 @@ class Builder:
 
             # Check if the build test is supposed to be a reproducible test
             with open(os.path.join(self.outputdir, ".config"), "r") as fconf:
-                reproducible = "BR2_REPRODUCIBLE=y\n" in fconf.read()
+                conf = fconf.read()
+                reproducible = "BR2_REPRODUCIBLE=y\n" in conf
+                per_package = "BR2_PER_PACKAGE_DIRECTORIES=y\n" in conf
+
+            self.build_parallel = per_package and randint(0, 1) == 0
+
             if reproducible:
                 ret = self.do_reproducible_build()
             else:
