@@ -145,14 +145,15 @@ from distutils.version import StrictVersion
 import platform
 from threading import Thread, Event
 import datetime
-import urlparse
 
 if sys.hexversion >= 0x3000000:
     import configparser
     import urllib.request as _urllib
+    import urllib.parse as urlparse
 else:
     import ConfigParser as configparser
     import urllib2 as _urllib
+    import urlparse
 
 urlopen = _urllib.urlopen
 urlopen_closing = lambda uri: contextlib.closing(urlopen(uri))
@@ -307,8 +308,10 @@ class Builder:
         list. This way, branches with a higher weight are more likely to
         be selected.
         """
+        csv_branches = []
         with urlopen_closing(urlparse.urljoin(self.http_url, 'branches')) as r:
-            csv_branches = r.readlines()
+            for l in r.readlines():
+                csv_branches.append(decode_bytes(l))
         branches = []
         for branch in csv.reader(csv_branches):
             branches += [branch[0]] * int(branch[1])
@@ -830,7 +833,7 @@ def main():
     # Enforce the sanest umask here, to avoid buildroot doing it on its
     # own and causing a double-make call, thus adding extraneous lines
     # in case of failures.
-    os.umask(0022)
+    os.umask(0o022)
 
     def sigterm_handler(signum, frame):
         """Kill all children"""
