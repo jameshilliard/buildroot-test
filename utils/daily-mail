@@ -589,7 +589,9 @@ def get_outdated_pkgs(path):
         stats = json.load(f)
     s = []
     for name, pkg in stats['packages'].items():
-        status, latest_ver, p_id = pkg['latest_version']
+        status = pkg['latest_version']['status']
+        latest_ver = pkg['latest_version']['version']
+        p_id = pkg['latest_version']['id']
         cur_ver = pkg['current_version']
         # if not upstream version was found, skip
         if status not in (2, 3):
