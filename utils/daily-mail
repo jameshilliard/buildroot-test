@@ -849,16 +849,30 @@ def __main__():
                          database=localconfig.db,
                          cursorclass=pymysql.cursors.DictCursor)
     if 'autobuild' in email_data:
+        print("Getting overall stats")
         overall_stats = get_overall_stats(db, date_str, branches)
+        print("Getting build results")
         results = get_build_results(db, date_str, branches)
+        print("Getting build results by reason")
         results_by_reason = get_build_results_grouped_by_reason(db, date_str, branches)
     else:
         overall_stats = {}
         results = {}
         results_by_reason = {}
-    outdated_pkgs = get_outdated_pkgs(localconfig.pkg_stats) if 'outdated' in email_data else []
-    cve_pkgs = get_cve_pkgs(localconfig.pkg_stats) if 'cve' in email_data else []
+    if 'outdated' in email_data:
+        print("Getting outdated package information")
+        outdated_pkgs = get_outdated_pkgs(localconfig.pkg_stats)
+    else:
+        outdated_pkgs = []
+
+    if 'cve' in email_data:
+        print("Getting CVE information")
+        cve_pkgs = get_cve_pkgs(localconfig.pkg_stats)
+    else:
+        cve_pkgs = []
+
     if email_data & {'defconfig', 'runtime-test'}:
+        print("Getting Gitlab CI information")
         gitlab_ci = get_gitlab_ci(branches, date_struct, kinds=email_data)
     else:
         gitlab_ci = {}
