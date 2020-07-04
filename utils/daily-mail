@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import _mysql
+import pymysql
 import sys
 import os
 import textwrap
@@ -52,22 +52,20 @@ def get_overall_stats(db, datestr, branches):
     '''
     stats = {}
     for branch in branches:
-        db.query("""select status,count(id) as count from results
+        cursor = db.cursor()
+        cursor.execute("""select status,count(id) as count from results
         where date(builddate) = '{}' and branch = '{}' group by status""".format(datestr, branch))
-        r = db.use_result()
-        result = dict(r.fetch_row(maxrows=0))
-        if '0' in result:
-            success = int(result['0'])
-        else:
-            success = 0
-        if '1' in result:
-            failures = int(result['1'])
-        else:
-            failures = 0
-        if '2' in result:
-            timeouts = int(result['2'])
-        else:
-            timeouts = 0
+        results = cursor.fetchall()
+        success = 0
+        failures = 0
+        timeouts = 0
+        for result in results:
+            if result['status'] == 0:
+                success = result['count']
+            elif result['status'] == 1:
+                failures = result['count']
+            elif result['status'] == 2:
+                timeouts = result['count']
         total = success + failures + timeouts
         stats[branch] = (success, failures, timeouts, total)
     return stats
@@ -564,23 +562,23 @@ def get_build_results(db, datestr, branches):
     '''
     results = {}
     for branch in branches:
-        db.query("""select * from results
+        cursor = db.cursor()
+        cursor.execute("""select * from results
         where date(builddate) = '{}'
         and status != 0 and branch = '{}'
         order by reason""".format(datestr, branch))
-        r = db.use_result()
-        results[branch] = r.fetch_row(how=1, maxrows=0)
+        results[branch] = cursor.fetchall()
     return results
 
 
 def get_build_results_grouped_by_reason(db, datestr, branches):
     results_by_reason = {}
     for branch in branches:
-        db.query("""select reason,count(id) as reason_count from results
+        cursor = db.cursor()
+        cursor.execute("""select reason,count(id) as reason_count from results
         where date(builddate) = '{}' and status != 0 and branch = '{}'
         group by reason order by reason_count desc, reason""".format(datestr, branch))
-        r = db.use_result()
-        results_by_reason[branch] = r.fetch_row(how=1, maxrows=0)
+        results_by_reason[branch] = cursor.fetchall()
     return results_by_reason
 
 
@@ -845,10 +843,11 @@ def __main__():
     email_dest = set(args.dest) if args.dest else {'dev', 'global'}
     email_data = set(args.data) if args.data else {'autobuild', 'outdated', 'cve', 'defconfig', 'runtime-test'}
 
-    db = _mysql.connect(host=localconfig.host,
-                        user=localconfig.user,
-                        passwd=localconfig.passwd,
-                        db=localconfig.db)
+    db = pymysql.connect(host=localconfig.host,
+                         user=localconfig.user,
+                         password=localconfig.passwd,
+                         database=localconfig.db,
+                         cursorclass=pymysql.cursors.DictCursor)
     if 'autobuild' in email_data:
         overall_stats = get_overall_stats(db, date_str, branches)
         results = get_build_results(db, date_str, branches)
