@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import _mysql
 import sys
@@ -367,7 +367,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
     '''
     Send the e-mails to the individual developers
     '''
-    for dev, notif in notifications.iteritems():
+    for dev, notif in notifications.items():
         to = dev.name
         email_from = localconfig.fromaddr
         subject = "[{}] Your daily results for {}".format(baseurl, datestr)
@@ -446,13 +446,13 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         contents += "-- \n"
         contents += http_baseurl
         if dry_run:
-            print "====================================================="
-            print "To: {}".format(to)
-            print "From: {}".format(email_from)
-            print "Subject: {}".format(subject)
-            print
-            print contents
-            print "====================================================="
+            print("=====================================================")
+            print("To: {}".format(to))
+            print("From: {}".format(email_from))
+            print("Subject: {}".format(subject))
+            print("")
+            print(contents)
+            print("=====================================================")
         else:
             msg = MIMEText(contents)
             msg['Subject'] = subject
@@ -460,7 +460,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
             msg['From'] = email_from
             msg['Date'] = formatdate()
             smtp.sendmail(email_from, to, msg.as_string())
-            print "To: {}".format(dev.name)
+            print("To: {}".format(dev.name))
 
 
 def global_email_branch_result(results, results_by_reason):
@@ -509,7 +509,7 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
         contents += "Autobuild statistics for {}\n".format(datestr)
         contents += "===============================\n\n"
         contents += "      branch |  OK | NOK | TIM | TOT |\n"
-    for branch in sorted(overall.iterkeys()):
+    for branch in sorted(overall.keys()):
         stats = overall[branch]
         if stats[3] == 0:
             continue
@@ -541,13 +541,13 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
     contents += "-- \n"
     contents += http_baseurl
     if dry_run:
-        print "====================================================="
-        print "To: {}".format(to)
-        print "From: {}".format(email_from)
-        print "Subject: {}".format(subject)
-        print
-        print contents
-        print "====================================================="
+        print("=====================================================")
+        print("To: {}".format(to))
+        print("From: {}".format(email_from))
+        print("Subject: {}".format(subject))
+        print("")
+        print(contents)
+        print("=====================================================")
     else:
         msg = MIMEText(contents)
         msg['Subject'] = subject
@@ -555,7 +555,7 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
         msg['From'] = email_from
         msg['Date'] = formatdate()
         smtp.sendmail(email_from, [to], msg.as_string())
-        print "To: buildroot@buildroot.net"
+        print("To: buildroot@buildroot.net")
 
 
 def get_build_results(db, datestr, branches):
@@ -807,7 +807,7 @@ def calculate_notifications(results, outdated_pkgs, cve_pkgs, gitlab_results):
     for pkg in cve_pkgs:
         add_cve_pkg_notification(notifications, pkg)
 
-    for branch, pipelines in gitlab_results.iteritems():
+    for branch, pipelines in gitlab_results.items():
         for pipeline in pipelines:
             for job in pipeline['jobs']:
                 if job['kind'] == 'defconfig':
