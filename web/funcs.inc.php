@@ -58,8 +58,12 @@ function bab_format_sql_filter($db, $filters)
   );
 
   # Move the symbols away from filters since implode wouldn't work with an empty key
-  $symbols = $filters['symbols'];
-  unset($filters['symbols']);
+  if (array_key_exists("symbols", $filters)) {
+    $symbols = $filters['symbols'];
+    unset($filters['symbols']);
+  } else {
+    $symbols = false;
+  }
 
   $sql_filters = implode(' and ', array_map(
     function ($v, $k) use ($db, $status_map) {
