@@ -139,6 +139,7 @@ import re
 import shutil
 import signal
 import subprocess
+import stat
 import sys
 from time import localtime, strftime
 from distutils.version import StrictVersion
@@ -175,6 +176,13 @@ else:
 # gst-ffmpeg, qt5webkit, mimic)
 HUNG_BUILD_TIMEOUT = 120 # mins
 VERSION = 1
+
+def rm_ro(f, p, _):
+    """Handler for rmtree() to remove read-only files and directories
+    """
+    os.chmod(os.path.dirname(p), stat.S_IRWXU)
+    os.chmod(p, stat.S_IRWXU) # 'X' if p is a directory, benign if a file
+    f(p)
 
 def log_write(logf, msg):
     logf.write("[%s] %s\n" % (strftime("%a, %d %b %Y %H:%M:%S", localtime()), msg))
@@ -384,13 +392,12 @@ class Builder:
 
         # Create an empty output directory. We remove it first, in case a previous build was aborted.
         if os.path.exists(self.outputdir):
-            # shutil.rmtree doesn't remove write-protected files
-            subprocess.call(["rm", "-rf", self.outputdir])
+            shutil.rmtree(self.outputdir, onerror=rm_ro)
         os.mkdir(self.outputdir)
 
         # If it exists, remove the other output directory used for reproducibility testing
         if os.path.exists(self.outputdir_2):
-            subprocess.call(["rm", "-rf", self.outputdir_2])
+            shutil.rmtree(self.outputdir_2, onerror=rm_ro)
         with open(os.path.join(self.outputdir, "branch"), "w") as branchf:
             branchf.write(branch)
 
