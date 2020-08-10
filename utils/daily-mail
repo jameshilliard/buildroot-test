@@ -878,15 +878,19 @@ def __main__():
     else:
         gitlab_ci = {}
     notifications = calculate_notifications(results, outdated_pkgs, cve_pkgs, gitlab_ci)
-    smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
-    smtp.starttls()
-    smtp.login(localconfig.smtpuser, localconfig.smtppass)
+    if args.dry_run:
+        smtp = None
+    else:
+        smtp = smtplib.SMTP(localconfig.smtphost, localconfig.smtpport)
+        smtp.starttls()
+        smtp.login(localconfig.smtpuser, localconfig.smtppass)
     if 'dev' in email_dest:
         developers_email(smtp, branches, notifications, date_str, args.dry_run)
     if 'global' in email_dest:
         global_email(smtp, branches, results, results_by_reason, date_str,
                      overall_stats, outdated_pkgs, cve_pkgs, gitlab_ci, args.dry_run)
-    smtp.quit()
+    if smtp:
+        smtp.quit()
 
 
 __main__()
