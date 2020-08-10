@@ -15,16 +15,16 @@ import argparse
 import re
 import json
 from packaging import version
-import certifi
-from urllib3 import HTTPSConnectionPool
-from urllib3.exceptions import HTTPError
-from multiprocessing import Pool as ProcessPool
+import asyncio
+import aiohttp
 
 sys.path.append(os.path.join(localconfig.brbase, "utils"))
 import getdeveloperlib  # noqa: E402
 
 RE_DATE = re.compile(r'^\d\d\d\d-\d\d-\d\d$')
 RE_HASH_40 = re.compile(r'.*[a-fA-F0-9]{40}.*')
+
+GITLAB_CI_MAX_PAGE_SIZE = 100
 
 baseurl = "autobuild.buildroot.net"
 http_baseurl = "http://" + baseurl
@@ -625,59 +625,43 @@ def get_cve_pkgs(path):
                   'cves': pkg['cves']})
     return sorted(s, key=lambda pkg: pkg['name'])
 
-def request_paginated_url(pool, url, page_size=100, page_name='page', **request_kwargs):
+
+async def gitlab_ci_get_job_one_page(pipeline, page):
+    params = {
+        "per_page": GITLAB_CI_MAX_PAGE_SIZE,
+        "page": page,
+        "scope": "failed",
+    }
+    headers = {
+        'PRIVATE-TOKEN': localconfig.gitlab_user_token
+    }
+    url = "https://gitlab.com/api/v4/projects/{}/pipelines/{}/jobs".format(localconfig.gitlab_project_id, pipeline)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params, headers=headers) as resp:
+            return await resp.json()
+
+
+async def gitlab_ci_get_all_jobs(pipeline):
     '''
     Simple helper to retrieve data from call paginated url.
     Request's result is assumed to be json list.
     '''
-    request_kwargs.setdefault('fields', {})
-    request_kwargs['fields']['per_page'] = page_size
     results = []
     page = 1
     while True:
-        request_kwargs['fields'][page_name] = page
-        try:
-            req = pool.request('GET', url, **request_kwargs)
-        except HTTPError:
-            print('error: there was an error with gitlab api. '
-                  'Please make sure your identification token is right and try again.')
-            break
-        if req.status != 200:
-            print('error: there was an error with gitlab api. '
-                  'Please make sure your identification token is right and try again.')
-            break
-        res = json.loads(req.data)
+        res = await gitlab_ci_get_job_one_page(pipeline, page)
         results += res
         page += 1
-        if len(res) != page_size:
+        if len(res) != GITLAB_CI_MAX_PAGE_SIZE:
             break
     return results
 
 
-def get_pipeline_details(project_id, pipeline, **request_kwargs):
-    pool = gitlab_ci_http_pool
-    pipeline_url = '/api/v4/projects/{}/pipelines/{}'.format(project_id, pipeline)
-    try:
-        pipeline_req = pool.request('GET', pipeline_url, **request_kwargs)
-    except HTTPError:
-        print('error: there were an error while fetching the gitlab-ci pipeline\'s details. '
-              'Please make sure your identification token is right and try again.')
-        return {}
-    if pipeline_req.status != 200:
-        print('error: there were an error while fetching the gitlab-ci pipeline\'s details. '
-              'Please make sure your identification token is right and try again.')
-        return {}
-    infos = json.loads(pipeline_req.data)
-    return infos
-
-
-def get_pipeline_jobs(project_id, pipeline, kinds=None, **request_kwargs):
-    pool = gitlab_ci_http_pool
-    jobs_url = '/api/v4/projects/{}/pipelines/{}/jobs'.format(project_id, pipeline)
-    jobs = request_paginated_url(pool, jobs_url, **request_kwargs)
+async def gitlab_ci_get_pipeline_jobs(pipeline, kinds=None):
+    jobs = await gitlab_ci_get_all_jobs(pipeline)
     for job in jobs:
-        # Remove the unnecessary 'pipeline' field
-        del job['pipeline']
+        # Remove a bunch of noisy unnecessary fields
+        del job['pipeline'], job['user'], job['runner'], job['commit']['message'], job['artifacts']
         # Backup the actual name and set the job's kind and name depending on the naming scheme
         name = job['full_name'] = job['name']
         if name.endswith('_defconfig'):
@@ -688,99 +672,89 @@ def get_pipeline_jobs(project_id, pipeline, kinds=None, **request_kwargs):
             job['name'] = name.split('.')[-1]
         else:
             job['kind'] = 'other'
-    # Filter failed jobs then sort them
-    jobs = (job for job in jobs if job['status'] == 'failed')
     if kinds:
         jobs = (job for job in jobs if job['kind'] in kinds)
     return sorted(jobs, key=lambda j: (j['name'], j['kind']))
 
 
-def get_gitlab_ci_pipelines(http_pool, process_pool, project_id, branches, date, ndays=None):
+async def gitlab_ci_get_pipelines_one_page(page, from_date, to_date):
+    params = {
+        "per_page": GITLAB_CI_MAX_PAGE_SIZE,
+        "page": page,
+        "status": "failed",
+        "updated_after": from_date,
+        "updated_before": to_date,
+        "order_by": "updated_at",
+    }
+    url = "https://gitlab.com/api/v4/projects/{}/pipelines".format(localconfig.gitlab_project_id)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            return await resp.json()
+
+
+async def gitlab_ci_get_pipelines(from_date):
     '''
     Returns all gitlab-ci pipelines ran after the given `date`
     '''
-    date_to = date
-    date_from = date - ndays if ndays else date
-    per_page = process_pool._processes
-    if per_page > 100:
-        raise ValueError('gitlab-ci supports a max pagination of 100 results per page. '
-                         'The pool passed as argument must have 100 or less processes.')
-    fields = {'per_page': per_page}
-    url = '/api/v4/projects/{}/pipelines'.format(project_id)
+    from_date_str = from_date.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    to_date_str = (from_date + timedelta(1)).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
     page = 1
     pipelines = []
 
-    # Fetch pipelines until `date_from` in reached
+    # Read all pipeline pages until an empty page is reached
     while True:
         # List pipelines
-        fields['page'] = page
-        page += 1
-        try:
-            cur_pipelines = http_pool.request('GET', url, fields=fields)
-        except HTTPError:
-            print('error: there was an error while fetching the gitlab-ci pipelines. '
-                  'Please make sure your identification token is right and try again.')
-            return pipelines
-        if cur_pipelines.status != 200:
-            print('error: was were an error while fetching the gitlab-ci pipeline\'s details. '
-                  'Please make sure your identification token is right and try again.')
-            return pipelines
-        cur_pipelines = json.loads(cur_pipelines.data)
+        cur_pipelines = await gitlab_ci_get_pipelines_one_page(page, from_date_str, to_date_str)
 
-        # Handle cases where the requested date is older than all pipelines
+        # No more pipelines in the result, bail out
         if len(cur_pipelines) == 0:
-            return pipelines
+            break
 
-        # Keep only failed pipelines, and the pipelines for the
-        # interesting branches
-        cur_pipelines = [p for p in cur_pipelines if p['status'] == 'failed' and p['ref'] in branches]
-
-        # Request more infos about each pipeline (for instance the date)
-        pipelines_infos = [process_pool.apply_async(get_pipeline_details, (project_id, p['id']))
-                           for p in cur_pipelines]
-        pipelines_infos = [p.get() for p in pipelines_infos]
-
-        # Add pipeline in the right period, break once the from_date is found
-        for p in pipelines_infos:
-            cur_date = datetime.strptime(p['finished_at'], '%Y-%m-%dT%H:%M:%S.%fZ').date()
-            if cur_date < date_from:
-                return pipelines
-            if cur_date > date_to:
-                continue
-            pipelines.append(p)
+        pipelines += cur_pipelines
+        page += 1
 
     return pipelines
 
 
-def get_gitlab_ci(branches, date, ndays=None, kinds=None):
+async def gitlab_ci_get_downstream_pipeline(pipeline):
+    url = "https://gitlab.com/api/v4/projects/{}/pipelines/{}/bridges".format(localconfig.gitlab_project_id, pipeline)
+    headers = {
+        'PRIVATE-TOKEN': localconfig.gitlab_user_token
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            json = await resp.json()
+            # assume we have only one bridge
+            return json[0]["downstream_pipeline"]["id"]
+
+
+async def gitlab_ci_get(from_date, kinds=None):
     '''
     Retrieve failed jobs from gitlab-ci grouped by pipelines
     from `date` (optionally up to `ndays` old)
     If `kinds` list is provided, only jobs matching one of the
     given kind will be returned.
     '''
-    header = {'PRIVATE-TOKEN': localconfig.gitlab_user_token}
-    project_id = localconfig.gitlab_project_id
-    failed_filter = {'fields': {'status': 'failed'}}
-
-    # Build pools
-    global gitlab_ci_http_pool
-    gitlab_ci_http_pool = HTTPSConnectionPool('gitlab.com', port=443, cert_reqs='CERT_REQUIRED',
-                                              ca_certs=certifi.where(), timeout=30, headers=header)
-    process_pool = ProcessPool(processes=64)
 
     # Fetch pipelines
-    pipelines = get_gitlab_ci_pipelines(gitlab_ci_http_pool, process_pool, project_id,
-                                        branches, date, ndays)
+    pipelines = await gitlab_ci_get_pipelines(from_date)
 
-    # Get jobs ran by those pipelines
-    pipelines_jobs = [process_pool.apply_async(get_pipeline_jobs, (project_id, p['id'], kinds),
-                                               failed_filter) for p in pipelines]
+    # Get the downstream pipeline ID for all pipelines
+    pipelines_downstream_ids = await asyncio.gather(*[gitlab_ci_get_downstream_pipeline(pipeline['id'])
+                                                      for pipeline in pipelines])
+    for pipeline, downstream_id in zip(pipelines, pipelines_downstream_ids):
+        pipeline['downstream-id'] = downstream_id
+
+    # Get jobs ran by those downstream pipelines
+    pipelines_jobs = await asyncio.gather(*[gitlab_ci_get_pipeline_jobs(pipeline['downstream-id'], kinds)
+                                            for pipeline in pipelines])
     for pipeline, jobs in zip(pipelines, pipelines_jobs):
-        pipeline['jobs'] = jobs.get()
+        pipeline['jobs'] = jobs
 
-    # Group pipelines by branch
-    pipelines = {branch: [p for p in pipelines if p['ref'] == branch] for branch in branches}
+    refs = set([p['ref'] for p in pipelines])
+
+    # Group pipelines by references (i.e tag, branch, etc.)
+    pipelines = {ref: [p for p in pipelines if p['ref'] == ref] for ref in refs}
     return pipelines
 
 
@@ -874,7 +848,8 @@ def __main__():
 
     if email_data & {'defconfig', 'runtime-test'}:
         print("Getting Gitlab CI information")
-        gitlab_ci = get_gitlab_ci(branches, date_struct, kinds=email_data)
+        loop = asyncio.get_event_loop()
+        gitlab_ci = loop.run_until_complete(gitlab_ci_get(date_struct, kinds=email_data))
     else:
         gitlab_ci = {}
     notifications = calculate_notifications(results, outdated_pkgs, cve_pkgs, gitlab_ci)
