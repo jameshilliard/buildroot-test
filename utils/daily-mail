@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import pymysql
 import sys
 import os
 import textwrap
@@ -844,12 +843,13 @@ def __main__():
     email_dest = set(args.dest) if args.dest else {'dev', 'global'}
     email_data = set(args.data) if args.data else {'autobuild', 'outdated', 'cve', 'defconfig', 'runtime-test'}
 
-    db = pymysql.connect(host=localconfig.host,
-                         user=localconfig.user,
-                         password=localconfig.passwd,
-                         database=localconfig.db,
-                         cursorclass=pymysql.cursors.DictCursor)
     if 'autobuild' in email_data:
+        import pymysql
+        db = pymysql.connect(host=localconfig.host,
+                             user=localconfig.user,
+                             password=localconfig.passwd,
+                             database=localconfig.db,
+                             cursorclass=pymysql.cursors.DictCursor)
         print("Getting overall stats")
         overall_stats = get_overall_stats(db, date_str, branches)
         print("Getting build results")
