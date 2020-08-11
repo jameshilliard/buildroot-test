@@ -559,7 +559,9 @@ def get_build_results(db, datestr, branches):
         where date(builddate) = '{}'
         and status != 0 and branch = '{}'
         order by reason""".format(datestr, branch))
-        results[branch] = cursor.fetchall()
+        r = cursor.fetchall()
+        if r:
+            results[branch] = r
     return results
 
 
