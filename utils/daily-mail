@@ -361,6 +361,10 @@ def show_cves(packages):
     return contents
 
 
+def format_title(title, separator_char="="):
+    return title + "\n" + separator_char * len(title) + "\n\n"
+
+
 def developers_email(smtp, branches, notifications, datestr, dry_run):
     '''
     Send the e-mails to the individual developers
@@ -376,8 +380,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         defconfigs = notif.defconfig_notifications
         runtime_tests = notif.runtime_test_notifications
         if archs or packages or defconfigs or runtime_tests:
-            contents += "Recent build failures and runtime-tests failures\n"
-            contents += "================================================\n\n"
+            contents += format_title("Recent build failures and runtime-tests failures")
             contents += textwrap.fill("This is the list of Buildroot build failures that occurred on {}, "
                                       "and for which you are a registered architecture developer, package "
                                       "developer or defconfig developer. This list also include runtime "
@@ -396,8 +399,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
             if not any(map(len, (archs, packages, defconfigs, runtimes))):
                 continue
 
-            contents += "Results for the '{}' branch\n".format(branch)
-            contents += "-------------------------" + "-" * len(branch) + "\n\n"
+            contents += format_title("Results for the '{}' branch".format(branch), "-")
 
             if len(archs) != 0:
                 contents += "Build failures related to your architectures:\n\n"
@@ -421,8 +423,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
 
         outdated = notif.package_version_notification
         if len(outdated) != 0:
-            contents += "Outdated packages\n"
-            contents += "=================\n\n"
+            contents += format_title("Outdated packages")
             contents += textwrap.fill("This is the list of packages for which a new version has been "
                                       "detected and for which you are a registered developer. Please "
                                       "help us improving the quality of Buildroot by bumping these "
@@ -433,8 +434,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
 
         cves = notif.package_cve_notification
         if len(cves) != 0:
-            contents += "Packages with CVEs\n"
-            contents += "==================\n\n"
+            contents += format_title("Packages with CVEs")
             contents += textwrap.fill("This is the list of packages for which a known CVE is affecting them, "
                                       "which means a security vulnerability exists for those packages.")
             contents += "\n\n"
@@ -462,15 +462,13 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
 
 
 def global_email_branch_result(results, results_by_reason):
-    contents = "Classification of failures by reason\n"
-    contents += "------------------------------------\n\n"
+    contents = format_title("Classification of failures by reason", "-")
     for r in results_by_reason:
         reason = shrink_str(r['reason'], 30)
         count = int(r['reason_count'])
         contents += "{:>30} | {:<2}\n".format(reason, count)
     contents += "\n\n"
-    contents += "Detail of failures\n"
-    contents += "------------------\n\n"
+    contents += format_title("Detail of failures", "-")
     contents += show_results(results, show_status=True, show_orphan=True)
     return contents
 
@@ -481,14 +479,12 @@ def global_email_branch_gitlab_result(gitlab_results):
 
     contents = ""
     if len(defconfigs) != 0:
-        contents += 'Detail of defconfig failures\n'
-        contents += '----------------------------\n\n'
+        contents += format_title('Detail of defconfig failures', '-')
         contents += show_gitlab_ci_jobs(defconfigs, job_column_description='defconfig',
                                         job_column_length=33, show_orphan=True)
         contents += "\n\n"
     if len(runtime_tests) != 0:
-        contents += "Detail of runtime-test failures\n"
-        contents += "-------------------------------\n\n"
+        contents += format_title("Detail of runtime-test failures", "-")
         contents += show_gitlab_ci_jobs(runtime_tests, job_column_description='runtime-test',
                                         job_column_length=25, show_orphan=True)
         contents += "\n\n"
@@ -504,8 +500,7 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
     subject = "[{}] Daily results for {}".format(baseurl, datestr)
     contents = "Hello,\n\n"
     if len(overall) != 0:
-        contents += "Autobuild statistics for {}\n".format(datestr)
-        contents += "===============================\n\n"
+        contents += format_title("Autobuild statistics for {}".format(datestr))
         contents += "      branch |  OK | NOK | TIM | TOT |\n"
     for branch in sorted(overall.keys()):
         stats = overall[branch]
@@ -519,8 +514,7 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
         branch_gitlab_results = gitlab_results.get(branch, [])
         if not any(map(len, (branch_results, branch_gitlab_results))):
             continue
-        contents += "Results for branch '{}'\n".format(branch)
-        contents += "=====================" + "=" * len(branch) + "\n\n"
+        contents += format_title("Results for branch '{}'".format(branch))
         if len(branch_results) != 0:
             contents += global_email_branch_result(branch_results, results_by_reason[branch])
             contents += "\n\n"
@@ -528,12 +522,10 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
             contents += global_email_branch_gitlab_result(branch_gitlab_results)
             contents += "\n\n"
     if outdated_pkgs:
-        contents += "Packages having a newer version\n"
-        contents += "===============================\n\n"
+        contents += format_title("Packages having a newer version")
         contents += show_outdated(outdated_pkgs, show_orphan=True)
     if cve_pkgs:
-        contents += "Packages having CVEs\n"
-        contents += "====================\n\n"
+        contents += format_title("Packages having CVEs")
         contents += show_cves(cve_pkgs)
     contents += "\n"
     contents += "-- \n"
