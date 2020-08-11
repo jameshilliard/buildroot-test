@@ -440,10 +440,12 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         outdated = notif.package_version_notification
         if len(outdated) != 0:
             contents += format_title("Outdated packages")
-            contents += textwrap.fill("This is the list of packages for which a new version has been "
-                                      "detected and for which you are a registered developer. Please "
-                                      "help us improving the quality of Buildroot by bumping these "
-                                      "packages to their latest version. Thanks!")
+            contents += textwrap.fill(
+                """This is the list of packages for which a new version has been
+                detected and for which you are a registered
+                developer. Please help us improving the quality of
+                Buildroot by bumping these packages to their latest
+                version. Thanks!""")
             contents += '\n\n'
             contents += show_outdated(outdated, show_orphan=show_orphan)
             contents += '\n'
@@ -451,8 +453,10 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         cves = notif.package_cve_notification
         if len(cves) != 0:
             contents += format_title("Packages with CVEs")
-            contents += textwrap.fill("This is the list of packages for which a known CVE is affecting them, "
-                                      "which means a security vulnerability exists for those packages.")
+            contents += textwrap.fill(
+                """This is the list of packages for which a known CVE is affecting
+                them, which means a security vulnerability exists for
+                those packages.""")
             contents += "\n\n"
             contents += show_cves(cves)
             contents += "\n"
