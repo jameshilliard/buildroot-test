@@ -379,45 +379,61 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         packages = notif.package_notifications
         defconfigs = notif.defconfig_notifications
         runtime_tests = notif.runtime_test_notifications
-        if archs or packages or defconfigs or runtime_tests:
-            contents += format_title("Recent build failures and runtime-tests failures")
-            contents += textwrap.fill("This is the list of Buildroot build failures that occurred on {}, "
-                                      "and for which you are a registered architecture developer, package "
-                                      "developer or defconfig developer. This list also include runtime "
-                                      "tests failures. Please help us improving the quality of Buildroot by "
-                                      "investigating those build failures and sending patches to fix them. "
-                                      "Thanks!".format(datestr))
-            contents += "\n\n"
+
         show_orphan = dev.name == ORPHAN_DEVELOPER
 
-        for branch in branches:
-            archs = notif.arch_notifications.get(branch, [])
-            packages = notif.package_notifications.get(branch, [])
-            defconfigs = notif.defconfig_notifications.get(branch, [])
-            runtimes = notif.runtime_test_notifications.get(branch, [])
+        if archs or packages:
+            contents += format_title("Autobuilder failures")
 
-            if not any(map(len, (archs, packages, defconfigs, runtimes))):
-                continue
+            contents += textwrap.fill(
+                """Below is a list of build failures reported by the Buildroot
+                autobuilders in relation to packages or CPU
+                architectures you are in charge of. Please help us
+                improving the quality of Buildroot by investigating
+                those build failures and sending patches to fix
+                them.Thanks!""".format(datestr))
+            contents += "\n\n"
 
-            contents += format_title("Results for the '{}' branch".format(branch), "-")
+            for branch in set(list(archs.keys()) + list(packages.keys())):
+                archs = notif.arch_notifications.get(branch, [])
+                packages = notif.package_notifications.get(branch, [])
 
-            if len(archs) != 0:
-                contents += "Build failures related to your architectures:\n\n"
-                contents += show_results(archs, show_status=False, show_orphan=False)
-                contents += "\n\n"
-            if len(packages) != 0:
-                contents += "Build failures related to your packages:\n\n"
-                contents += show_results(packages, show_status=False, show_orphan=show_orphan)
-                contents += "\n\n"
-            if len(defconfigs) != 0:
-                contents += "Build failures related to your defconfigs:\n\n"
-                contents += show_gitlab_ci_jobs(defconfigs, job_column_description='defconfig',
+                contents += format_title("Results for the '{}' branch".format(branch), "-")
+
+                if len(archs) != 0:
+                    contents += "Build failures related to your architectures:\n\n"
+                    contents += show_results(archs, show_status=False, show_orphan=False)
+                    contents += "\n\n"
+                if len(packages) != 0:
+                    contents += "Build failures related to your packages:\n\n"
+                    contents += show_results(packages, show_status=False, show_orphan=show_orphan)
+                    contents += "\n\n"
+
+        if defconfigs or runtime_tests:
+            contents += format_title("Gitlab CI failures")
+            contents += textwrap.fill(
+                """Below is a list of Gitlab CI job failures in relation to defconfigs
+                or runtime tests you are in charge of. Please help us
+                improving the quality of Buildroot by investigating
+                those build failures and sending patches to fix
+                them.Thanks!""".format(datestr))
+            contents += "\n\n"
+
+            for ref in set(list(defconfigs.keys()) + list(runtime_tests.keys())):
+                defconfigs = notif.defconfig_notifications.get(ref, [])
+                runtimes = notif.runtime_test_notifications.get(ref, [])
+
+                contents += format_title("Results for '{}'".format(ref), "-")
+
+                if len(defconfigs) != 0:
+                    contents += "Build failures related to your defconfigs:\n\n"
+                    contents += show_gitlab_ci_jobs(defconfigs, job_column_description='defconfig',
                                                 job_column_length=33, show_orphan=show_orphan)
-                contents += "\n\n"
-            if len(runtimes) != 0:
-                contents += "Build failures related to your runtime tests:\n\n"
-                contents += show_gitlab_ci_jobs(runtimes, job_column_description='runtime-test',
-                                                job_column_length=25, show_orphan=show_orphan)
+                    contents += "\n\n"
+                if len(runtimes) != 0:
+                    contents += "Build failures related to your runtime tests:\n\n"
+                    contents += show_gitlab_ci_jobs(runtimes, job_column_description='runtime-test',
+                                                    job_column_length=25, show_orphan=show_orphan)
 
             contents += "\n"
 
