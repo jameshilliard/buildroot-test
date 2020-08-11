@@ -461,30 +461,31 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
             print("To: {}".format(dev.name))
 
 
-def global_email_branch_result(results, results_by_reason):
-    contents = format_title("Classification of failures by reason", "-")
+def global_email_branch_result(branch, results, results_by_reason):
+    contents = format_title("Classification of failures by reason for {}".format(branch), "-")
     for r in results_by_reason:
         reason = shrink_str(r['reason'], 30)
         count = int(r['reason_count'])
         contents += "{:>30} | {:<2}\n".format(reason, count)
     contents += "\n\n"
-    contents += format_title("Detail of failures", "-")
+    contents += format_title("Detail of failures for {}".format(branch), "-")
     contents += show_results(results, show_status=True, show_orphan=True)
+    contents += "\n\n"
     return contents
 
 
-def global_email_branch_gitlab_result(gitlab_results):
+def global_email_ref_gitlab_result(ref, gitlab_results):
     defconfigs = [j for p in gitlab_results for j in p['jobs'] if j['kind'] == 'defconfig']
     runtime_tests = [j for p in gitlab_results for j in p['jobs'] if j['kind'] == 'runtime-test']
 
     contents = ""
     if len(defconfigs) != 0:
-        contents += format_title('Detail of defconfig failures', '-')
+        contents += format_title('Detail of defconfig failures for {}'.format(ref), '-')
         contents += show_gitlab_ci_jobs(defconfigs, job_column_description='defconfig',
                                         job_column_length=33, show_orphan=True)
         contents += "\n\n"
     if len(runtime_tests) != 0:
-        contents += format_title("Detail of runtime-test failures", "-")
+        contents += format_title("Detail of runtime-test failures for {}".format(ref), "-")
         contents += show_gitlab_ci_jobs(runtime_tests, job_column_description='runtime-test',
                                         job_column_length=25, show_orphan=True)
         contents += "\n\n"
@@ -499,34 +500,41 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
     email_from = localconfig.fromaddr
     subject = "[{}] Daily results for {}".format(baseurl, datestr)
     contents = "Hello,\n\n"
+
+    # Overall autobuilder statistics
     if len(overall) != 0:
         contents += format_title("Autobuild statistics for {}".format(datestr))
         contents += "      branch |  OK | NOK | TIM | TOT |\n"
-    for branch in sorted(overall.keys()):
-        stats = overall[branch]
-        if stats[3] == 0:
-            continue
-        contents += "  {:^10} | {:^3} | {:^3} | {:^3} | {:^3} |\n".format(branch, stats[0], stats[1], stats[2], stats[3])
-    if any(map(len, (overall, gitlab_results))):
+        for branch in sorted(overall.keys()):
+            stats = overall[branch]
+            if stats[3] == 0:
+                continue
+            contents += "  {:^10} | {:^3} | {:^3} | {:^3} | {:^3} |\n".format(branch, stats[0], stats[1], stats[2], stats[3])
         contents += "\n"
-    for branch in branches:
-        branch_results = results.get(branch, [])
-        branch_gitlab_results = gitlab_results.get(branch, [])
-        if not any(map(len, (branch_results, branch_gitlab_results))):
-            continue
-        contents += format_title("Results for branch '{}'".format(branch))
-        if len(branch_results) != 0:
-            contents += global_email_branch_result(branch_results, results_by_reason[branch])
-            contents += "\n\n"
-        if len(branch_gitlab_results) != 0:
-            contents += global_email_branch_gitlab_result(branch_gitlab_results)
-            contents += "\n\n"
+
+    # Detailed autobuilder results
+    for branch in results.keys():
+        contents += global_email_branch_result(branch,
+                                               results.get(branch, []),
+                                               results_by_reason[branch])
+
+    # Gitlab CI results
+    if len(gitlab_results.keys()) != 0:
+        contents += format_title("Gitlab CI results for {}".format(datestr), "=")
+
+        for ref in sorted(gitlab_results.keys()):
+            contents += global_email_ref_gitlab_result(ref, gitlab_results.get(ref, []))
+
+    # Outdated packages details
     if outdated_pkgs:
         contents += format_title("Packages having a newer version")
         contents += show_outdated(outdated_pkgs, show_orphan=True)
+
+    # CVE details
     if cve_pkgs:
         contents += format_title("Packages having CVEs")
         contents += show_cves(cve_pkgs)
+
     contents += "\n"
     contents += "-- \n"
     contents += http_baseurl
