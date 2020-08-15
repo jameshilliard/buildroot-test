@@ -118,7 +118,5 @@ echo " </tr>\n";
 echo "</table>\n";
 echo "<p></p>";
 
-echo "<center><img src=\"graph.php?branch=$branch\"/></center>";
-
 bab_footer();
 ?>
