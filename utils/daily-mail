@@ -746,8 +746,14 @@ async def gitlab_ci_get_downstream_pipeline(pipeline):
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=headers) as resp:
             json = await resp.json()
-            # assume we have only one bridge
-            return json[0]["downstream_pipeline"]["id"]
+            # Jobs ran on old branches (2020.02.x) don't have
+            # downstream pipelines. In this case, pretend the
+            # downstream pipeline is ourself, as it's directly the
+            # mainline pipeline that contains the jobs.
+            if len(json) == 0:
+                return pipeline
+            else:
+                return json[0]["downstream_pipeline"]["id"]
 
 
 async def gitlab_ci_get(from_date, kinds=None):
