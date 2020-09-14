@@ -699,6 +699,23 @@ class Builder:
         with open(os.path.join(self.resultdir, "submitter"), "w+") as submitterf:
             submitterf.write(self.submitter)
 
+        def get_os_release_path():
+            for p in ['/etc/os-release', '/usr/lib/os-release']:
+                if os.path.exists(p):
+                    return p
+            return None
+
+        def save_host_distro_info():
+            host_distro = os.path.join(self.resultdir, "host-distro")
+            os_release = get_os_release_path()
+            if os_release is None:
+                with open(host_distro, "w") as f:
+                    f.write('Unknown')
+            else:
+                shutil.copyfile(os_release, host_distro)
+
+        save_host_distro_info()
+
         # Yes, shutil.make_archive() would be nice, but it doesn't exist
         # in Python 2.6.
         ret = subprocess.call(["tar", "cjf", "results.tar.bz2", "results"],
