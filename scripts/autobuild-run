@@ -141,7 +141,7 @@ import signal
 import subprocess
 import stat
 import sys
-from time import localtime, strftime
+from time import localtime, strftime, sleep
 from distutils.version import StrictVersion
 import platform
 from threading import Thread, Event
@@ -151,10 +151,12 @@ if sys.hexversion >= 0x3000000:
     import configparser
     import urllib.request as _urllib
     import urllib.parse as urlparse
+    import urllib.error.URLError as URLError
 else:
     import ConfigParser as configparser
     import urllib2 as _urllib
     import urlparse
+    import urllib2.URLError as URLError
 
 urlopen = _urllib.urlopen
 urlopen_closing = lambda uri: contextlib.closing(urlopen(uri))
@@ -790,7 +792,10 @@ class Builder:
         log_write(self.log, "INFO: instance started")
 
         while True:
-            self.run_one_build()
+            try:
+                self.run_one_build()
+            except URLError, e:
+                sleep(30)
 
 # args / config file merging inspired by:
 # https://github.com/docopt/docopt/blob/master/examples/config_file_example.py
