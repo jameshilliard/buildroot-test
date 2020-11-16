@@ -751,6 +751,35 @@ class Builder:
 
             log_write(self.log, "INFO: results saved as %s" % resultfilename)
 
+    def run_one_build(self):
+        self.check_version()
+
+        ret = self.prepare_build()
+        if ret != 0:
+            return
+
+        os.mkdir(self.resultdir)
+
+        ret = self.gen_config()
+        if ret != 0:
+            log_write(self.log, "WARN: failed to generate configuration")
+            return
+
+        # Check if the build test is supposed to be a reproducible test
+        with open(os.path.join(self.outputdir, ".config"), "r") as fconf:
+            conf = fconf.read()
+            reproducible = "BR2_REPRODUCIBLE=y\n" in conf
+            per_package = "BR2_PER_PACKAGE_DIRECTORIES=y\n" in conf
+
+        self.build_parallel = per_package and randint(0, 1) == 0
+
+        if reproducible:
+            ret = self.do_reproducible_build()
+        else:
+            ret = self.do_build(self.outputdir)
+
+        self.send_results(ret)
+
     def run_instance(self):
         """Main per-instance loop
 
@@ -761,33 +790,7 @@ class Builder:
         log_write(self.log, "INFO: instance started")
 
         while True:
-            self.check_version()
-
-            ret = self.prepare_build()
-            if ret != 0:
-                continue
-
-            os.mkdir(self.resultdir)
-
-            ret = self.gen_config()
-            if ret != 0:
-                log_write(self.log, "WARN: failed to generate configuration")
-                continue
-
-            # Check if the build test is supposed to be a reproducible test
-            with open(os.path.join(self.outputdir, ".config"), "r") as fconf:
-                conf = fconf.read()
-                reproducible = "BR2_REPRODUCIBLE=y\n" in conf
-                per_package = "BR2_PER_PACKAGE_DIRECTORIES=y\n" in conf
-
-            self.build_parallel = per_package and randint(0, 1) == 0
-
-            if reproducible:
-                ret = self.do_reproducible_build()
-            else:
-                ret = self.do_build(self.outputdir)
-
-            self.send_results(ret)
+            self.run_one_build()
 
 # args / config file merging inspired by:
 # https://github.com/docopt/docopt/blob/master/examples/config_file_example.py
