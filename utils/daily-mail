@@ -29,7 +29,7 @@ GITLAB_CI_MAX_PAGE_SIZE = 100
 baseurl = "autobuild.buildroot.net"
 http_baseurl = "http://" + baseurl
 
-developers = getdeveloperlib.parse_developers(localconfig.brbase)
+developers = getdeveloperlib.parse_developers()
 gitlab_ci_http_pool = None
 
 
