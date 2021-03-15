@@ -385,13 +385,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         if archs or packages:
             contents += format_title("Autobuilder failures")
 
-            contents += textwrap.fill(
-                """Below is a list of build failures reported by the Buildroot
-                autobuilders in relation to packages or CPU
-                architectures you are in charge of. Please help us
-                improving the quality of Buildroot by investigating
-                those build failures and sending patches to fix
-                them.Thanks!""".format(datestr))
+            contents += textwrap.fill("Below is a list of build failures reported by the Buildroot autobuilders in relation to packages or CPU architectures you are in charge of. Please help us improving the quality of Buildroot by investigating those build failures and sending patches to fix them.", width=72)
             contents += "\n\n"
 
             for branch in set(list(archs.keys()) + list(packages.keys())):
@@ -411,12 +405,7 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
 
         if defconfigs or runtime_tests:
             contents += format_title("Gitlab CI failures")
-            contents += textwrap.fill(
-                """Below is a list of Gitlab CI job failures in relation to defconfigs
-                or runtime tests you are in charge of. Please help us
-                improving the quality of Buildroot by investigating
-                those build failures and sending patches to fix
-                them.Thanks!""".format(datestr))
+            contents += textwrap.fill("Below is a list of Gitlab CI job failures in relation to defconfigs or runtime tests you are in charge of. Please help us improving the quality of Buildroot by investigating those build failures and sending patches to fix them.", width=72)
             contents += "\n\n"
 
             for ref in set(list(defconfigs.keys()) + list(runtime_tests.keys())):
@@ -440,27 +429,21 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
         outdated = notif.package_version_notification
         if len(outdated) != 0:
             contents += format_title("Outdated packages")
-            contents += textwrap.fill(
-                """This is the list of packages for which a new version has been
-                detected and for which you are a registered
-                developer. Please help us improving the quality of
-                Buildroot by bumping these packages to their latest
-                version. Thanks!""")
+            contents += textwrap.fill("This is the list of packages for which a new version has been detected and for which you are a registered developer. Please help us improving the quality of Buildroot by bumping these packages to their latest version.", width=72)
             contents += '\n\n'
             contents += show_outdated(outdated, show_orphan=show_orphan)
             contents += '\n'
 
         if notif.package_cve_notification:
             contents += format_title("Packages having CVEs")
-            contents += textwrap.fill(
-                """This is the list of packages for which a known CVE is affecting
-                them, which means a security vulnerability exists for
-                those packages.""")
+            contents += textwrap.fill("This is the list of packages for which a known CVE is affecting them, which means a security vulnerability exists for those packages.", width=72)
             for branch, cves in notif.package_cve_notification.items():
                 contents += "\n\n"
                 contents += format_title("CVEs for the '{}' branch".format(branch), "-")
                 contents += show_cves(cves)
             contents += "\n\n"
+
+        contents += "Thanks for your contribution to Buildroot!\n\n"
 
         contents += "-- \n"
         contents += http_baseurl
