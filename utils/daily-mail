@@ -548,6 +548,7 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
     if outdated_pkgs:
         contents += format_title("Packages having a newer version")
         contents += show_outdated(outdated_pkgs, show_orphan=True)
+        contents += "\n"
 
     # CVE details
     for branch, cves in cve_pkgs.items():
