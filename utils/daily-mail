@@ -450,14 +450,16 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
             contents += show_outdated(outdated, show_orphan=show_orphan)
             contents += '\n'
 
-        for branch, cves in notif.package_cve_notification.items():
-            contents += format_title("Packages with CVEs in branch %s" % branch)
+        if notif.package_cve_notification:
+            contents += format_title("Packages having CVEs")
             contents += textwrap.fill(
                 """This is the list of packages for which a known CVE is affecting
                 them, which means a security vulnerability exists for
                 those packages.""")
-            contents += "\n\n"
-            contents += show_cves(cves)
+            for branch, cves in notif.package_cve_notification.items():
+                contents += "\n\n"
+                contents += format_title("CVEs for the '{}' branch".format(branch), "-")
+                contents += show_cves(cves)
             contents += "\n\n"
 
         contents += "-- \n"
@@ -551,10 +553,12 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
         contents += "\n"
 
     # CVE details
-    for branch, cves in cve_pkgs.items():
-        contents += format_title("Packages having CVEs in branch %s" % branch)
-        contents += show_cves(cves)
-        contents += "\n"
+    if cve_pkgs:
+        contents += format_title("Packages having CVEs")
+        for branch, cves in cve_pkgs.items():
+            contents += format_title("CVEs for the '{}' branch".format(branch), "-")
+            contents += show_cves(cves)
+            contents += "\n"
 
     contents += "\n"
     contents += "-- \n"
