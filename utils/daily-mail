@@ -77,7 +77,7 @@ class Notification:
         self.defconfig_notifications = defaultdict(list)
         self.runtime_test_notifications = defaultdict(list)
         self.package_version_notification = []
-        self.package_cve_notification = []
+        self.package_cve_notification = defaultdict(list)
 
 
 def get_mklist(basepath):
@@ -217,7 +217,7 @@ def add_outdated_pkg_notification(notifications, package):
         notif.package_version_notification.append(package)
 
 
-def add_cve_pkg_notification(notifications, package):
+def add_cve_pkg_notification(branch, notifications, package):
     '''
     Add to the notifications{} dict notifications that are related to
     package "maintainers".
@@ -225,7 +225,7 @@ def add_cve_pkg_notification(notifications, package):
     for dev in developers:
         if package['name'] in dev.packages:
             notif = notifications.setdefault(dev, Notification())
-            notif.package_cve_notification.append(package)
+            notif.package_cve_notification[branch].append(package)
 
 
 def shrink_str(string, length, align='right', fill='...'):
@@ -450,16 +450,15 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
             contents += show_outdated(outdated, show_orphan=show_orphan)
             contents += '\n'
 
-        cves = notif.package_cve_notification
-        if len(cves) != 0:
-            contents += format_title("Packages with CVEs")
+        for branch, cves in notif.package_cve_notification.items():
+            contents += format_title("Packages with CVEs in branch %s" % branch)
             contents += textwrap.fill(
                 """This is the list of packages for which a known CVE is affecting
                 them, which means a security vulnerability exists for
                 those packages.""")
             contents += "\n\n"
             contents += show_cves(cves)
-            contents += "\n"
+            contents += "\n\n"
 
         contents += "-- \n"
         contents += http_baseurl
@@ -551,9 +550,10 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
         contents += show_outdated(outdated_pkgs, show_orphan=True)
 
     # CVE details
-    if cve_pkgs:
-        contents += format_title("Packages having CVEs")
-        contents += show_cves(cve_pkgs)
+    for branch, cves in cve_pkgs.items():
+        contents += format_title("Packages having CVEs in branch %s" % branch)
+        contents += show_cves(cves)
+        contents += "\n"
 
     contents += "\n"
     contents += "-- \n"
@@ -636,16 +636,25 @@ def get_outdated_pkgs(path):
     return sorted(s, key=lambda pkg: pkg['name'])
 
 
-def get_cve_pkgs(path):
-    with open(path, 'r') as f:
-        stats = json.load(f)
-    s = []
-    for name, pkg in stats['packages'].items():
-        if len(pkg['cves']) == 0:
+# Returns a dict, with the branch name as the key, and as
+# values a list of dicts for each package/CVE
+def get_cve_pkgs(path, branches):
+    d = {}
+    for branch in branches:
+        fpath = os.path.join(path, branch + ".json")
+        if not os.path.exists(fpath):
+            print("WARNING: skipping branch %s for CVE checking, file not found" % branch)
             continue
-        s.append({'name': str(name),
-                  'cves': pkg['cves']})
-    return sorted(s, key=lambda pkg: pkg['name'])
+        with open(fpath, 'r') as f:
+            stats = json.load(f)
+        s = []
+        for name, pkg in stats['packages'].items():
+            if len(pkg['cves']) == 0:
+                continue
+            s.append({'name': str(name),
+                      'cves': pkg['cves']})
+        d[branch] = sorted(s, key=lambda pkg: pkg['name'])
+    return d
 
 
 async def gitlab_ci_get_job_one_page(pipeline, page):
@@ -804,8 +813,9 @@ def calculate_notifications(results, outdated_pkgs, cve_pkgs, gitlab_results):
     for pkg in outdated_pkgs:
         add_outdated_pkg_notification(notifications, pkg)
 
-    for pkg in cve_pkgs:
-        add_cve_pkg_notification(notifications, pkg)
+    for branch, packages in cve_pkgs.items():
+        for pkg in packages:
+            add_cve_pkg_notification(branch, notifications, pkg)
 
     for branch, pipelines in gitlab_results.items():
         for pipeline in pipelines:
@@ -863,16 +873,20 @@ def __main__():
         results = {}
         results_by_reason = {}
     if 'outdated' in email_data:
-        print("Getting outdated package information")
-        outdated_pkgs = get_outdated_pkgs(localconfig.pkg_stats)
+        if "next" in branches:
+            outdated_pkgs_branch = "next"
+        else:
+            outdated_pkgs_branch = "master"
+        print("Getting outdated package information from branch %s" % outdated_pkgs_branch)
+        outdated_pkgs = get_outdated_pkgs(os.path.join(localconfig.pkg_stats, outdated_pkgs_branch + ".json"))
     else:
         outdated_pkgs = []
 
     if 'cve' in email_data:
         print("Getting CVE information")
-        cve_pkgs = get_cve_pkgs(localconfig.pkg_stats)
+        cve_pkgs = get_cve_pkgs(localconfig.pkg_stats, branches)
     else:
-        cve_pkgs = []
+        cve_pkgs = {}
 
     if email_data & {'defconfig', 'runtime-test'}:
         print("Getting Gitlab CI information")
