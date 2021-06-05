@@ -151,12 +151,12 @@ if sys.hexversion >= 0x3000000:
     import configparser
     import urllib.request as _urllib
     import urllib.parse as urlparse
-    import urllib.error.URLError as URLError
+    from urllib.error import URLError
 else:
     import ConfigParser as configparser
     import urllib2 as _urllib
     import urlparse
-    import urllib2.URLError as URLError
+    from urllib2 import URLError
 
 urlopen = _urllib.urlopen
 urlopen_closing = lambda uri: contextlib.closing(urlopen(uri))
