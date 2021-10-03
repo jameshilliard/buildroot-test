@@ -151,6 +151,13 @@ function import_result($buildid, $filename)
       return;
     }
 
+    system("grep -q 'Xogium' " . $thisbuildtmpdir . "submitter",
+	   $retval);
+    if ($retval == 0) {
+      echo "Reject build result, Xogium build results are bogus\n";
+      return;
+    }
+
     /* Remove the build.log.bz2 file if it's in there */
     system("rm -f " . $thisbuildtmpdir . "build.log.bz2", $retval);
 
