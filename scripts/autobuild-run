@@ -71,6 +71,7 @@ Format of the configuration file:
    http-login = <value>
    http-password = <value>
    submitter = <value>
+   no-toolchains-csv
 """
 
 import contextlib
@@ -371,6 +372,8 @@ class Builder:
             if not os.path.isabs(toolchains_csv):
                 toolchains_csv = os.path.join(self.srcdir, toolchains_csv)
             args.extend(["--toolchains-csv", toolchains_csv])
+        else:
+            args.extend(["--no-toolchains-csv"])
 
         ret = subprocess.call(args, stdout=devnull, stderr=self.log)
         return ret
@@ -814,6 +817,11 @@ def main():
                                 help="Toolchain configuration file",
                                 type=pathlib.Path,
                                 default=pathlib.Path("support/config-fragments/autobuild/toolchain-configs.csv"))
+    toolchains_csv.add_argument("--no-toolchains-csv",
+                                dest="toolchains_csv",
+                                help="Generate random toolchain configuration",
+                                action='store_false',
+                                default=argparse.SUPPRESS)
     parser.add_argument("--repo", "-r",
                         help="URL of Buildroot repository to clone",
                         type=str,
