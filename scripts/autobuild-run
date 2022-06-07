@@ -364,12 +364,15 @@ class Builder:
         args = [os.path.join(self.srcdir, "utils/genrandconfig"),
                 "-o", self.outputdir, "-b", self.srcdir]
 
+        with open(os.path.join(self.outputdir, "branch"), "r") as branchf:
+            branch = branchf.read().strip()
+
         toolchains_csv = self.toolchains_csv
         if toolchains_csv:
             if not os.path.isabs(toolchains_csv):
                 toolchains_csv = os.path.join(self.srcdir, toolchains_csv)
             args.extend(["--toolchains-csv", toolchains_csv])
-        else:
+        elif branch != "2022.02.x":
             args.extend(["--no-toolchains-csv"])
 
         ret = subprocess.call(args, stdout=devnull, stderr=self.log)
