@@ -120,9 +120,6 @@ else:
     decode_bytes = _identity
     encode_str = _identity
 
-# A number of packages can take > 60mins of build time (e.g
-# gst-ffmpeg, qt5webkit, mimic)
-HUNG_BUILD_TIMEOUT = 120 # mins
 VERSION = 1
 
 def rm_ro(f, p, _):
@@ -208,7 +205,7 @@ class Builder:
     def __init__(self, instance, njobs, sysinfo,
                  http_url, http_login, http_password,
                  submitter, make_opts, nice, toolchains_csv,
-                 repo, upload, buildpid, debug):
+                 repo, upload, buildpid, debug, hung_build_timeout):
         self.instance = instance
         self.njobs = njobs
         self.sysinfo = sysinfo
@@ -223,6 +220,7 @@ class Builder:
         self.upload = upload
         self.buildpid = buildpid
         self.debug = debug
+        self.hung_build_timeout = hung_build_timeout
         self.build_parallel = False
 
         # frequently needed directories
@@ -388,7 +386,7 @@ class Builder:
             if os.path.exists(build_time_logfile):
                 mtime = datetime.datetime.fromtimestamp(os.stat(build_time_logfile).st_mtime)
 
-                if mtime < datetime.datetime.now() - datetime.timedelta(minutes=HUNG_BUILD_TIMEOUT):
+                if mtime < datetime.datetime.now() - datetime.timedelta(minutes=self.hung_build_timeout):
                     if sub_proc.poll() is None:
                         monitor_thread_hung_build_flag.set() # Used by do_build() to determine build hang
                         log_write(self.log, "INFO: build hung")
@@ -811,6 +809,11 @@ def main():
     parser.add_argument("--debug", "-d",
                         help="Send log output to stdout instead of log file",
                         type=str)
+    parser.add_argument("--hung-build-timeout",
+                        help="A number of packages can take > 60mins of build "
+                             "time (e.g gst-ffmpeg, qt5webkit, mimic), sets "
+                             "timeout in minutes",
+                        type=int, default=120)
     toolchains_csv = parser.add_mutually_exclusive_group(required=False)
     toolchains_csv.add_argument("--toolchains-csv",
                                 dest="toolchains_csv",
@@ -895,7 +898,8 @@ def main():
             repo = args.repo,
             upload = upload,
             buildpid = buildpid,
-            debug = args.debug)
+            debug = args.debug,
+            hung_build_timeout = args.hung_build_timeout)
         p = multiprocessing.Process(target=builder.run_instance)
         p.start()
         processes.append(p)
