@@ -44,9 +44,6 @@
 #
 # TODO:
 #
-# - Instead of excluding all configurations that have
-#   BR2_PACKAGE_CLASSPATH=y, improve the script to detect whether the
-#   necessary host machine requirements are there to build classpath.
 # - Extend required dependencies to subversion, mercurial, cpio, wget, python,
 #   etc.
 # - Detect selection of multiple virtual package providers and don't consider it
