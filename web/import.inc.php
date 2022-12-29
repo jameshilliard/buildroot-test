@@ -151,6 +151,13 @@ function import_result($buildid, $filename)
       return;
     }
 
+    system("grep -q 'No space left on device' " . $thisbuildtmpdir . "build-end.log",
+	   $retval);
+    if ($retval == 0) {
+      echo "Reject build result, no space left on device\n";
+      return;
+    }
+
     system("grep -q 'Xogium' " . $thisbuildtmpdir . "submitter",
 	   $retval);
     if ($retval == 0) {
