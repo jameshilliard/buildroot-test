@@ -749,8 +749,11 @@ async def gitlab_ci_get_downstream_pipeline(pipeline):
             # mainline pipeline that contains the jobs.
             if len(json) == 0:
                 return pipeline
-            else:
-                return json[0]["downstream_pipeline"]["id"]
+
+            if not json[0]["downstream_pipeline"]:
+                return None
+
+            return json[0]["downstream_pipeline"]["id"]
 
 
 async def gitlab_ci_get(from_date, kinds=None):
@@ -769,6 +772,10 @@ async def gitlab_ci_get(from_date, kinds=None):
                                                       for pipeline in pipelines])
     for pipeline, downstream_id in zip(pipelines, pipelines_downstream_ids):
         pipeline['downstream-id'] = downstream_id
+
+    # When the main pipeline fails (usually for CI infra reasons), the
+    # downstream pipeline can be None, filter those results out.
+    pipelines = list(filter(lambda x: x['downstream-id'] is not None, pipelines))
 
     # Get jobs ran by those downstream pipelines
     pipelines_jobs = await asyncio.gather(*[gitlab_ci_get_pipeline_jobs(pipeline['downstream-id'], kinds)
