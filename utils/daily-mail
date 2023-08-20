@@ -704,6 +704,7 @@ async def gitlab_ci_get_pipelines_one_page(page, from_date, to_date):
         "updated_after": from_date,
         "updated_before": to_date,
         "order_by": "updated_at",
+        "source": "trigger",
     }
     url = "https://gitlab.com/api/v4/projects/{}/pipelines".format(localconfig.gitlab_project_id)
     async with aiohttp.ClientSession() as session:
