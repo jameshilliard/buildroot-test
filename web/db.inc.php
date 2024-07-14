@@ -46,9 +46,6 @@ class db
    */
   function quote_smart($value)
   {
-    if (get_magic_quotes_gpc())
-      $value = stripslashes($value);
-
     if (!is_numeric($value))
       $value = "'" . $this->conn->real_escape_string($value) . "'";
 
