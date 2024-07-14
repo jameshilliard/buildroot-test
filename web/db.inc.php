@@ -3,7 +3,7 @@ include("config.inc.php");
 
 class db
 {
-  function db()
+  function __construct()
   {
     global $db_host;
     global $db_user;
