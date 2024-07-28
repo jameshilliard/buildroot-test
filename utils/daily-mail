@@ -461,8 +461,11 @@ def developers_email(smtp, branches, notifications, datestr, dry_run):
             msg['To'] = to
             msg['From'] = email_from
             msg['Date'] = formatdate()
-            smtp.sendmail(email_from, to, msg.as_string())
-            print("To: {}".format(dev.name))
+            try:
+                smtp.sendmail(email_from, to, msg.as_string())
+                print("To: {}".format(dev.name))
+            except:
+                print("Couldn't send mail to {}".format(dev.name))
 
 
 def global_email_branch_result(branch, results, results_by_reason):
@@ -560,8 +563,11 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
         msg['To'] = to
         msg['From'] = email_from
         msg['Date'] = formatdate()
-        smtp.sendmail(email_from, [to], msg.as_string())
-        print("To: buildroot@buildroot.net")
+        try:
+            smtp.sendmail(email_from, [to], msg.as_string())
+            print("To: buildroot@buildroot.net")
+        except:
+            print("Couldn't send mail to buildroot@buildroot.net")
 
 
 def get_build_results(db, datestr, branches):
