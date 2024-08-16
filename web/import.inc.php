@@ -100,6 +100,9 @@ function import_result($buildid, $filename)
     $buildresultdir = $maindir . "/results/";
     $tmpbuildresultdir = $buildresultdir . "tmp/";
 
+    /* Ensure the group has write access */
+    umask(0002);
+
     echo "Importing $buildid from $filename\n";
 
     $finalbuildresultdir = $buildresultdir . "/" . substr($buildid, 0, 3) . "/";
