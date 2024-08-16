@@ -286,31 +286,17 @@ class Builder:
         if not os.path.exists(self.dldir):
             os.mkdir(self.dldir)
 
-        # recursively find files under root
-        def find_files(root):
-            for r, d, f in os.walk(root):
-                # do not remove individual files from git caches. 'git' can
-                # be either dl/<package>/git or dl/git and we want to
-                # eventually remove tarballs for the git package, so check
-                # for '.git' instead to match only dl/<package>/git/.git .
-                if '.git' in d:
-                    del d[:]
-                    continue
-                for i in f:
-                    yield os.path.join(r, i)
-
-        # Remove 5 random files from the download directory. Removing
-        # random files from the download directory allows to ensure we
-        # regularly re-download files to check that their upstream
-        # location is still correct.
+        # Remove 5 random directories from the download
+        # directory. Removing random files from the download directory
+        # allows to ensure we regularly re-download files to check
+        # that their upstream location is still correct.
         for i in range(0, 5):
-            flist = list(find_files(self.dldir))
+            flist = os.listdir(self.dldir)
             if not flist:
                 break
             f = flist[randint(0, len(flist) - 1)]
-            log_write(self.log, "INFO: removing %s from downloads" %
-                      os.path.relpath(f, self.dldir))
-            os.remove(f)
+            log_write(self.log, "INFO: removing %s from downloads" % f)
+            shutil.rmtree(os.path.join(self.dldir, f))
 
         branch = self.get_branch()
         log_write(self.log, "INFO: testing branch '%s'" % branch)
