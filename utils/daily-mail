@@ -14,7 +14,7 @@ import math
 import argparse
 import re
 import json
-from packaging import version
+import packaging.version
 import asyncio
 import aiohttp
 
@@ -619,7 +619,11 @@ def get_outdated_pkgs(path):
             continue
         # if the current version in Buildroot is newer or equal to the
         # latest reported by release-monitoring, skip
-        if version.parse(str(cur_ver)) >= version.parse(str(latest_ver)):
+        try:
+            if packaging.version.parse(str(cur_ver)) >= packaging.version.parse(str(latest_ver)):
+                continue
+        # If we couldn't parse the version, well... ignore
+        except packaging.version.InvalidVersion:
             continue
 
         s.append({'name': str(name),
