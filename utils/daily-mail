@@ -323,12 +323,12 @@ def show_results(results, show_status, show_orphan=False):
 def show_outdated(packages, show_orphan=False):
     contents = ''
     # Header
-    contents += '{:^30} | {:^8} | {:^44} | {:^12} | {:^12}'.format('name', 'found by',
+    contents += '{:^30} | {:^8} | {:^45} | {:^12} | {:^12}'.format('name', 'found by',
                                                                    'link to release-monitoring.org',
                                                                    'version', 'upstream')
     if show_orphan:
         contents += ' | {:^5}'.format('orph?')
-    contents += '\n{0:-^30}-+-{0:-^8}-+-{0:-^44}-+-{0:-^12}-+-{0:-^12}-'.format('')
+    contents += '\n{0:-^30}-+-{0:-^8}-+-{0:-^45}-+-{0:-^12}-+-{0:-^12}-'.format('')
     if show_orphan:
         contents += '+-{:-^5}-'.format('')
     contents += '\n'
@@ -339,9 +339,9 @@ def show_outdated(packages, show_orphan=False):
         version = shrink_str(pkg['version'], 12)
         upstream = shrink_str(pkg['upstream'], 12)
         orphan_str = 'ORPH' if pkg.get('orphan') else ''
-        url = 'https://release-monitoring.org/project/{:0>5}'.format(pkg['id'])
+        url = 'https://release-monitoring.org/project/{:0>6}'.format(pkg['id'])
 
-        contents += '{:>30} | {:^8} | {:0>5} | {:12} | {:12}'.format(name, pkg['from'], url, version, upstream)
+        contents += '{:>30} | {:^8} | {:0>6} | {:12} | {:12}'.format(name, pkg['from'], url, version, upstream)
         if show_orphan:
             contents += ' | {:4}'.format(orphan_str)
         contents += '\n'
