@@ -175,9 +175,9 @@ function import_result($buildid, $filename)
        exists */
     if (! file_exists($finalbuildresultdir)) {
       if (! mkdir($finalbuildresultdir)) {
-	system("rm -rf " . $thisbuildtmpdir);
-	echo "Cannot create final output directory.\n";
-	return;
+          system("rm -rf " . $thisbuildtmpdir);
+          echo "Cannot create final output directory.\n";
+          return;
       }
     }
 
