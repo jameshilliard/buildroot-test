@@ -26,7 +26,7 @@ RE_HASH_40 = re.compile(r'.*[a-fA-F0-9]{40}.*')
 
 GITLAB_CI_MAX_PAGE_SIZE = 100
 
-baseurl = "autobuild.buildroot.net"
+baseurl = "autobuild.buildroot.org"
 http_baseurl = "http://" + baseurl
 
 developers = getdeveloperlib.parse_developers()
@@ -565,9 +565,9 @@ def global_email(smtp, branches, results, results_by_reason, datestr, overall, o
         msg['Date'] = formatdate()
         try:
             smtp.sendmail(email_from, [to], msg.as_string())
-            print("To: buildroot@buildroot.net")
+            print("To: buildroot@buildroot.org")
         except:
-            print("Couldn't send mail to buildroot@buildroot.net")
+            print("Couldn't send mail to buildroot@buildroot.org")
 
 
 def get_build_results(db, datestr, branches):
