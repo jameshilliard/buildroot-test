@@ -27,7 +27,7 @@ RE_HASH_40 = re.compile(r'.*[a-fA-F0-9]{40}.*')
 GITLAB_CI_MAX_PAGE_SIZE = 100
 
 baseurl = "autobuild.buildroot.org"
-http_baseurl = "http://" + baseurl
+http_baseurl = "https://" + baseurl
 
 developers = getdeveloperlib.parse_developers()
 gitlab_ci_http_pool = None

@@ -19,13 +19,13 @@ function bab_header($title)
 function bab_footer()
 {
   echo "<p style=\"width: 90%; margin: auto; text-align: center; font-size: 60%; border-top: 1px solid black; padding-top: 5px;\">\n";
-  echo "<a href=\"http://buildroot.org\">About Buildroot</a>&nbsp;-&nbsp;";
+  echo "<a href=\"https://buildroot.org\">About Buildroot</a>&nbsp;-&nbsp;";
   echo "<a href=\"rss.php\">RSS feed of build results</a>&nbsp;-&nbsp;";
   echo "<a href=\"stats.php\">build stats</a>&nbsp;-&nbsp;";
   echo "<a href=\"stats/\">package stats</a>&nbsp;-&nbsp;";
   echo "<a href=\"toolchains/\">toolchain configs</a>&nbsp;-&nbsp;";
   echo "<a href=\"search.php\">advanced search</a>&nbsp;-&nbsp;";
-  echo "<a href=\"http://git.buildroot.net/buildroot-test/plain/utils/br-reproduce-build\">Script to reproduce a build</a>\n";
+  echo "<a href=\"https://git.buildroot.net/buildroot-test/plain/utils/br-reproduce-build\">Script to reproduce a build</a>\n";
   echo "</p>\n";
   echo "</body>\n";
   echo "</html>\n";
