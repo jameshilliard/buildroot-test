@@ -161,13 +161,6 @@ function import_result($buildid, $filename)
       return;
     }
 
-    system("grep -q 'asahi-mini' " . $thisbuildtmpdir . "submitter",
-	   $retval);
-    if ($retval == 0) {
-      echo "Reject build result, asahi-mini build results are bogus\n";
-      return;
-    }
-
     system("grep -q 'Xogium' " . $thisbuildtmpdir . "submitter",
 	   $retval);
     if ($retval == 0) {
