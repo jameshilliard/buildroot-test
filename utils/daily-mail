@@ -134,7 +134,7 @@ def find_package(reason):
     return None
 
 
-ORPHAN_DEVELOPER = "Arnout Vandecappelle <arnout@mind.be>"
+ORPHAN_DEVELOPER = "Arnout Vandecappelle <arnout@rnout.be>"
 
 
 def get_orphan_developer():
