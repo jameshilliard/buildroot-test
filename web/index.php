@@ -101,7 +101,7 @@ while ($current = mysqli_fetch_object($results)) {
   else if ($current->status == 2)
     echo "<td><a href=\"?status=TIMEOUT\">TIMEOUT</a></td>";
 
-  echo "<td style=\"font-size: 80%\"><a href=\"?branch=" . urlencode($current->branch) . "\">" . $current->branch . "</a><br/><a href=\"http://git.buildroot.net/buildroot/commit/?id=" . $current->commitid . "\">" . substr($current->commitid, 0, 8) . "</a></td>";
+  echo "<td style=\"font-size: 80%\"><a href=\"?branch=" . urlencode($current->branch) . "\">" . $current->branch . "</a><br/><a href=\"https://gitlab.com/buildroot.org/buildroot/-/commit/" . $current->commitid . "\">" . substr($current->commitid, 0, 8) . "</a></td>";
   echo "<td><a href=\"?submitter=" . urlencode($current->submitter) . "\">" . $submitter . "</a></td>";
   echo "<td><a href=\"?arch=" . $current->arch . "\">" . $current->arch . "</a>";
   if ($current->subarch != "")
