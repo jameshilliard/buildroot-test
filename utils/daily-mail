@@ -190,7 +190,7 @@ def add_runtime_test_notification(branch, notifications, job):
     '''
     orphan = True
     for dev in developers:
-        if job['full_name'] in dev.runtime_tests:
+        if job['full_name'].removesuffix(".test_run") in dev.runtime_tests:
             orphan = False
             notif = notifications.setdefault(dev, Notification())
             notif.runtime_test_notifications[branch].append(job)
