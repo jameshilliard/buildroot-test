@@ -269,7 +269,11 @@ def show_gitlab_ci_jobs(jobs, job_column_description, job_column_length, show_or
 
     # Data
     for job in sorted(jobs, key=lambda j: (j['kind'], j['name'])):
-        name = shrink_str(job['name'], job_column_length, align='left')
+        if job['full_name'].startswith("tests."):
+            name = job['full_name'].split(".")[-2]
+        else:
+            name = job['name']
+        name = shrink_str(name, job_column_length, align='left')
         orphan = 'ORPH' if job.get('orphan') else ''
 
         contents += '{:>{}} | {:^61}'.format(name, job_column_length, job['web_url'])
