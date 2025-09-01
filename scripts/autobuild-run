@@ -88,8 +88,6 @@ import subprocess
 import stat
 import sys
 from time import localtime, strftime, sleep
-from distutils.version import StrictVersion
-import platform
 from threading import Thread, Event
 import datetime
 
