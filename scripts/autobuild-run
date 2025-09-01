@@ -727,7 +727,7 @@ class Builder:
         while True:
             try:
                 self.run_one_build()
-            except URLError as e:
+            except URLError:
                 sleep(30)
 
 class Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
