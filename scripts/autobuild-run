@@ -611,7 +611,7 @@ class Builder:
             srcroot = os.path.join(self.outputdir, "build", '-'.join(reason))
             destroot = os.path.join(self.resultdir, '-'.join(reason))
             config_files = ('config.log', 'CMakeCache.txt', 'CMakeError.log',
-                'CMakeOutput.log')
+                            'CMakeOutput.log', 'meson-log.txt')
 
             for root, dirs, files in os.walk(srcroot):
                 dest = os.path.join(destroot, os.path.relpath(root, srcroot))
