@@ -18,7 +18,7 @@
 
 # This script runs the autobuilder logic: it runs Buildroot builds for
 # random configuration and submits the result to
-# http://autobuild.buildroot.org.
+# https://autobuild.buildroot.org.
 #
 # Configuration parameters are:
 #
@@ -34,7 +34,7 @@
 #   through the configuration file.
 #
 # - http-login, http-password: the HTTP login and password to submit
-#   build results to http://autobuild.buildroot.org. Request those
+#   build results to https://autobuild.buildroot.org. Request those
 #   credentials from Thomas Petazzoni
 #   <thomas.petazzoni@free-electrons.com>. These configuration
 #   parameters can only be defined through the configuration file.
@@ -768,7 +768,7 @@ def main():
                         type=str, default='N/A')
     parser.add_argument("--http-url",
                         help="URL of resource to submit your results.",
-                        type=str, default='http://autobuild.buildroot.org/')
+                        type=str, default='https://autobuild.buildroot.org/')
     parser.add_argument("--http-login",
                         help="username to send results with",
                         type=str)
