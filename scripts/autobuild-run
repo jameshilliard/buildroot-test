@@ -810,7 +810,7 @@ def main():
     parser.add_argument("--repo", "-r",
                         help="URL of Buildroot repository to clone",
                         type=str,
-                        default="https://github.com/buildroot/buildroot.git")
+                        default="https://gitlab.com/buildroot.org/buildroot.git")
 
     args = parser.parse_args()
 
