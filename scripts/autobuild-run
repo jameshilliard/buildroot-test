@@ -333,7 +333,7 @@ class Builder:
 
         return 0
 
-    def gen_config(self):
+    def gen_config(self, env=os.environ):
         """Generate a new random configuration."""
 
         log_write(self.log, "INFO: generate the configuration")
@@ -357,7 +357,12 @@ class Builder:
         elif branch != "2022.02.x":
             args.extend(["--no-toolchains-csv"])
 
-        ret = subprocess.call(args, stdout=devnull, stderr=self.log)
+        if "BR2_HIDE_SECONDARY_TARGET_OPTIONS" not in env:
+            if randint(0, 9) != 0:
+                env = env.copy()
+                env["BR2_HIDE_SECONDARY_TARGET_OPTIONS"] = "y"
+
+        ret = subprocess.call(args, stdout=devnull, stderr=self.log, env=env)
         return ret
 
     def stop_on_build_hang(self, monitor_thread_hung_build_flag,
