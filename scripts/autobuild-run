@@ -730,6 +730,12 @@ class Builder:
             except URLError:
                 sleep(30)
 
+
+def run_builder_instance(**kwargs):
+    builder = Builder(**kwargs)
+    builder.run_instance()
+
+
 class Formatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     pass
 
@@ -866,7 +872,7 @@ def main():
     buildpid = multiprocessing.Array('i', int(args.ninstances))
     processes = []
     for i in range(0, int(args.ninstances)):
-        builder = Builder(
+        builder_kwargs = dict(
             instance = i,
             njobs = args.njobs,
             sysinfo = sysinfo,
@@ -882,7 +888,8 @@ def main():
             buildpid = buildpid,
             debug = args.debug,
             hung_build_timeout = args.hung_build_timeout)
-        p = multiprocessing.Process(target=builder.run_instance)
+        p = multiprocessing.Process(target=run_builder_instance,
+                                    kwargs=builder_kwargs)
         p.start()
         processes.append(p)
 
